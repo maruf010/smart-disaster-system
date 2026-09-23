@@ -124,5 +124,16 @@ def init_db():
             roads
         )
 
+    # Safe migrations for existing databases
+    user_cols = [c[1] for c in cur.execute("PRAGMA table_info(users)").fetchall()]
+    if "full_name" not in user_cols:
+        cur.execute("ALTER TABLE users ADD COLUMN full_name TEXT DEFAULT ''")
+    if "phone" not in user_cols:
+        cur.execute("ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''")
+
+    req_cols = [c[1] for c in cur.execute("PRAGMA table_info(emergency_requests)").fetchall()]
+    if "user_id" not in req_cols:
+        cur.execute("ALTER TABLE emergency_requests ADD COLUMN user_id INTEGER DEFAULT NULL")
+
     conn.commit()
     conn.close()

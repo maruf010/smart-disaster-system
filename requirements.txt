@@ -1,1 +1,2 @@
-# No external packages required. Uses Python standard library only.
+# Smart Disaster & Emergency Resource Management System (SDERMS)
+customtkinter>=6.0.0

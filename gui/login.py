@@ -16,6 +16,7 @@ class LoginWindow(ctk.CTk):
         self.configure(fg_color=Theme.BG_ROOT)
 
         self._center_window(480, 640)
+        
 
         # Current modes:
         # role_mode: 'CITIZEN' or 'ADMIN' (Default: 'CITIZEN')

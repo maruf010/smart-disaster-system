@@ -274,7 +274,7 @@ class DashboardView(ctk.CTkScrollableFrame):
                 w.destroy()
 
             high_requests = conn.execute("""
-                SELECT id, requester_name, location, emergency_type, priority_score, priority_level, status
+                SELECT id, requester_name, location, emergency_type, priority_score, priority_level, status, created_at
                 FROM emergency_requests
                 WHERE status != 'RESOLVED'
                 ORDER BY priority_score DESC, id ASC
@@ -290,6 +290,7 @@ class DashboardView(ctk.CTkScrollableFrame):
                 )
                 lbl.pack(pady=12)
             else:
+                from utils.helper import format_datetime
                 for idx, req in enumerate(high_requests):
                     row_box = ctk.CTkFrame(
                         self.alerts_list,
@@ -318,9 +319,10 @@ class DashboardView(ctk.CTkScrollableFrame):
                         text_color=Theme.TEXT_MAIN
                     ).grid(row=0, column=1, padx=(0, 10), pady=6)
 
+                    time_str = format_datetime(req["created_at"]) if "created_at" in req.keys() else "N/A"
                     ctk.CTkLabel(
                         row_box,
-                        text=f"{req['emergency_type']}  •  📍 {req['location']} ({req['requester_name'] or 'N/A'})",
+                        text=f"{req['emergency_type']}  •  📍 {req['location']} ({req['requester_name'] or 'N/A'})  •  🕒 {time_str}",
                         font=Theme.font_small(),
                         text_color=Theme.TEXT_MAIN,
                         anchor="w"

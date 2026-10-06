@@ -2,6 +2,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 from database import get_connection
 from gui.theme import Theme
+from utils.helper import format_datetime
 
 class ShelterView(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
@@ -37,7 +38,7 @@ class ShelterView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="Monitor shelter bed availability and utilize algorithmic best-fit matching to prevent shelter overcrowding",
+            text="Monitor shelter bed availability, location, timestamps, and utilize algorithmic best-fit matching to prevent shelter overcrowding",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
             text_color=Theme.TEXT_MUTED
         ).pack(anchor="w", pady=(1, 0))
@@ -79,7 +80,7 @@ class ShelterView(ctk.CTkFrame):
 
         self.ent_loc = ctk.CTkEntry(
             add_box,
-            placeholder_text="Location / Area",
+            placeholder_text="Location / Area (e.g. Zone A)",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -206,19 +207,53 @@ class ShelterView(ctk.CTkFrame):
             border_color=Theme.BORDER_COLOR_LIGHT
         )
         container.grid(row=2, column=0, sticky="nsew", padx=12, pady=(0, 12))
-        container.grid_rowconfigure(1, weight=1)
+        container.grid_rowconfigure(2, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
+        # Search & Filter Bar
+        filter_bar = ctk.CTkFrame(container, fg_color="transparent")
+        filter_bar.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
+        filter_bar.grid_columnconfigure(0, weight=1)
+
+        self.sh_search_admin = ctk.CTkEntry(
+            filter_bar,
+            placeholder_text="🔍 Search shelter by name or location...",
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small()
+        )
+        self.sh_search_admin.grid(row=0, column=0, padx=(0, 4), sticky="ew")
+        self.sh_search_admin.bind("<KeyRelease>", lambda e: self.refresh())
+
+        self.f_sh_avail = ctk.CTkComboBox(
+            filter_bar,
+            values=["All Shelters", "Available Only", "Full Only"],
+            width=150,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self.refresh()
+        )
+        self.f_sh_avail.grid(row=0, column=1, padx=4)
+        self.f_sh_avail.set("All Shelters")
+
+        # Table Header
         th = ctk.CTkFrame(
             container,
             height=32,
             corner_radius=6,
             fg_color=Theme.BG_HEADER
         )
-        th.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
+        th.grid(row=1, column=0, sticky="ew", padx=8, pady=(4, 2))
         th.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-        cols = ["SHELTER NAME", "LOCATION", "MAX CAPACITY", "OCCUPIED BEDS", "OCCUPANCY LEVEL", "STATUS"]
+        cols = ["SHELTER NAME", "📍 LOCATION", "CAPACITY / OCCUPIED", "OCCUPANCY LEVEL", "🕒 ADDED TIME", "STATUS"]
         for idx, col in enumerate(cols):
             ctk.CTkLabel(
                 th,
@@ -229,7 +264,7 @@ class ShelterView(ctk.CTkFrame):
             ).grid(row=0, column=idx, sticky="ew", padx=8, pady=4)
 
         self.scroll_list = ctk.CTkScrollableFrame(container, fg_color="transparent")
-        self.scroll_list.grid(row=1, column=0, sticky="nsew", padx=4, pady=2)
+        self.scroll_list.grid(row=2, column=0, sticky="nsew", padx=4, pady=2)
         self.scroll_list.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
     def _add_shelter(self):
@@ -314,17 +349,40 @@ class ShelterView(ctk.CTkFrame):
         finally:
             conn.close()
 
-        if not rows:
+        # Filtering
+        q = self.sh_search_admin.get().strip().lower() if hasattr(self, 'sh_search_admin') else ""
+        avail_f = self.f_sh_avail.get() if hasattr(self, 'f_sh_avail') else "All Shelters"
+
+        filtered = []
+        for r in rows:
+            cap = r["capacity"]
+            occ = r["occupied"]
+            avail = max(0, cap - occ)
+
+            if avail_f == "Available Only" and avail <= 0:
+                continue
+            if avail_f == "Full Only" and avail > 0:
+                continue
+
+            if q:
+                n = str(r["name"] or "").lower()
+                l = str(r["location"] or "").lower()
+                if q not in n and q not in l:
+                    continue
+            filtered.append(r)
+
+        if not filtered:
+            msg = "No shelter records match your filter criteria." if rows else "No shelter facilities registered yet."
             lbl = ctk.CTkLabel(
                 self.scroll_list,
-                text="No shelter facilities registered yet.",
+                text=msg,
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MUTED
             )
             lbl.pack(pady=16)
             return
 
-        for idx, r in enumerate(rows):
+        for idx, r in enumerate(filtered):
             row_frame = ctk.CTkFrame(
                 self.scroll_list,
                 fg_color=Theme.BG_ROW_EVEN if idx % 2 == 0 else "transparent",
@@ -362,24 +420,15 @@ class ShelterView(ctk.CTkFrame):
             # Capacity
             ctk.CTkLabel(
                 row_frame,
-                text=f"{cap:,} beds",
+                text=f"{cap:,} beds ({occ:,} occ, {avail:,} free)",
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MAIN,
                 anchor="w"
             ).grid(row=0, column=2, sticky="ew", padx=6, pady=5)
 
-            # Occupied
-            ctk.CTkLabel(
-                row_frame,
-                text=f"{occ:,} ({avail:,} free)",
-                font=Theme.font_small(),
-                text_color=Theme.TEXT_MUTED,
-                anchor="w"
-            ).grid(row=0, column=3, sticky="ew", padx=6, pady=5)
-
             # Progress Bar
             prog_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-            prog_frame.grid(row=0, column=4, sticky="ew", padx=6, pady=5)
+            prog_frame.grid(row=0, column=3, sticky="ew", padx=6, pady=5)
             prog_frame.grid_columnconfigure(0, weight=1)
 
             pbar = ctk.CTkProgressBar(prog_frame, height=8, corner_radius=4)
@@ -394,6 +443,16 @@ class ShelterView(ctk.CTkFrame):
 
             pct_lbl = ctk.CTkLabel(prog_frame, text=f"{(ratio*100):.0f}%", font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9), text_color=Theme.TEXT_MUTED)
             pct_lbl.grid(row=0, column=1, padx=(4, 0))
+
+            # Added Time
+            time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
+            ctk.CTkLabel(
+                row_frame,
+                text=f"🕒 {time_str}",
+                font=Theme.font_small(),
+                text_color=Theme.TEXT_MUTED,
+                anchor="w"
+            ).grid(row=0, column=4, sticky="ew", padx=6, pady=5)
 
             # Status Badge
             if avail <= 0:

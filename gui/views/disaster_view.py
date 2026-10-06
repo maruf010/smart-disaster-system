@@ -2,6 +2,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 from database import get_connection
 from gui.theme import Theme
+from utils.helper import format_datetime
 
 class DisasterView(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
@@ -37,7 +38,7 @@ class DisasterView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="Register active cyclones, floods, earthquakes and monitor casualty mitigation status",
+            text="Register active cyclones, floods, earthquakes and monitor casualty mitigation status with live filters and timestamp tracking",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
             text_color=Theme.TEXT_MUTED
         ).pack(anchor="w", pady=(1, 0))
@@ -88,7 +89,7 @@ class DisasterView(ctk.CTkFrame):
 
         self.ent_area = ctk.CTkEntry(
             form_card,
-            placeholder_text="Affected Region / District",
+            placeholder_text="Affected Region / District (e.g. Sylhet Sadar)",
             height=32,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -145,31 +146,95 @@ class DisasterView(ctk.CTkFrame):
             border_color=Theme.BORDER_COLOR_LIGHT
         )
         container.grid(row=2, column=0, sticky="nsew", padx=12, pady=(0, 12))
-        container.grid_rowconfigure(1, weight=1)
+        container.grid_rowconfigure(2, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
+        # Search and Filters Bar
+        filter_bar = ctk.CTkFrame(container, fg_color="transparent")
+        filter_bar.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
+        filter_bar.grid_columnconfigure(0, weight=1)
+
+        self.search_entry = ctk.CTkEntry(
+            filter_bar,
+            placeholder_text="🔍 Search disaster by name or affected area...",
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small()
+        )
+        self.search_entry.grid(row=0, column=0, padx=(0, 4), sticky="ew")
+        self.search_entry.bind("<KeyRelease>", lambda e: self.refresh())
+
+        self.f_type = ctk.CTkComboBox(
+            filter_bar,
+            values=["All Types", "Flood", "Cyclone", "Earthquake", "Fire", "Landslide", "Other"],
+            width=120,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self.refresh()
+        )
+        self.f_type.grid(row=0, column=1, padx=4)
+        self.f_type.set("All Types")
+
+        self.f_sev = ctk.CTkComboBox(
+            filter_bar,
+            values=["All Severities", "CRITICAL", "HIGH", "MODERATE", "LOW"],
+            width=130,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self.refresh()
+        )
+        self.f_sev.grid(row=0, column=2, padx=4)
+        self.f_sev.set("All Severities")
+
+        self.f_status = ctk.CTkComboBox(
+            filter_bar,
+            values=["All Status", "ACTIVE", "RESOLVED"],
+            width=120,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self.refresh()
+        )
+        self.f_status.grid(row=0, column=3, padx=4)
+        self.f_status.set("All Status")
+
+        # Table Header
         th = ctk.CTkFrame(
             container,
             height=32,
             corner_radius=6,
             fg_color=Theme.BG_HEADER
         )
-        th.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
-        th.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
+        th.grid(row=1, column=0, sticky="ew", padx=8, pady=(4, 2))
+        th.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-        cols = ["INCIDENT ID", "DISASTER NAME", "TYPE", "AFFECTED AREA", "SEVERITY", "POPULATION", "ACTION"]
+        cols = ["INCIDENT & TYPE", "📍 AFFECTED AREA", "SEVERITY", "POPULATION", "🕒 REPORTED TIME", "STATUS & ACTION"]
         for idx, col in enumerate(cols):
             ctk.CTkLabel(
                 th,
                 text=col,
                 font=Theme.font_badge(),
                 text_color=Theme.TEXT_MUTED,
-                anchor="w" if idx < 6 else "center"
+                anchor="w" if idx < 5 else "center"
             ).grid(row=0, column=idx, sticky="ew", padx=8, pady=4)
 
         self.scroll_list = ctk.CTkScrollableFrame(container, fg_color="transparent")
-        self.scroll_list.grid(row=1, column=0, sticky="nsew", padx=4, pady=2)
-        self.scroll_list.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
+        self.scroll_list.grid(row=2, column=0, sticky="nsew", padx=4, pady=2)
+        self.scroll_list.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
     def _add_disaster(self):
         name = self.ent_name.get().strip()
@@ -223,10 +288,32 @@ class DisasterView(ctk.CTkFrame):
         finally:
             conn.close()
 
-        if not rows:
+        # Filtering
+        q = self.search_entry.get().strip().lower() if hasattr(self, 'search_entry') else ""
+        type_f = self.f_type.get() if hasattr(self, 'f_type') else "All Types"
+        sev_f = self.f_sev.get() if hasattr(self, 'f_sev') else "All Severities"
+        status_f = self.f_status.get() if hasattr(self, 'f_status') else "All Status"
+
+        filtered = []
+        for r in rows:
+            if type_f != "All Types" and r["type"].upper() != type_f.upper():
+                continue
+            if sev_f != "All Severities" and r["severity"].upper() != sev_f.upper():
+                continue
+            if status_f != "All Status" and r["status"].upper() != status_f.upper():
+                continue
+            if q:
+                n = str(r["name"] or "").lower()
+                a = str(r["area"] or "").lower()
+                if q not in n and q not in a:
+                    continue
+            filtered.append(r)
+
+        if not filtered:
+            msg = "No disaster records match your filter criteria." if rows else "No disaster records found in database."
             lbl = ctk.CTkLabel(
                 self.scroll_list,
-                text="No disaster records found in the database.",
+                text=msg,
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MUTED
             )
@@ -240,7 +327,7 @@ class DisasterView(ctk.CTkFrame):
             "LOW": Theme.SUCCESS
         }
 
-        for idx, r in enumerate(rows):
+        for idx, r in enumerate(filtered):
             is_active = (r["status"] == "ACTIVE")
             row_frame = ctk.CTkFrame(
                 self.scroll_list,
@@ -250,45 +337,24 @@ class DisasterView(ctk.CTkFrame):
                 border_color=Theme.BORDER_COLOR_LIGHT
             )
             row_frame.pack(fill="x", padx=2, pady=2)
-            row_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
+            row_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-            # ID
-            ctk.CTkLabel(
-                row_frame,
-                text=f"DIS-{r['id']:03d}",
-                font=Theme.font_body_bold(),
-                text_color=Theme.TEXT_MAIN,
-                anchor="w"
-            ).grid(row=0, column=0, sticky="ew", padx=8, pady=6)
+            # Col 0: ID & Name & Type
+            box0 = ctk.CTkFrame(row_frame, fg_color="transparent")
+            box0.grid(row=0, column=0, sticky="ew", padx=8, pady=6)
+            ctk.CTkLabel(box0, text=f"DIS-{r['id']:03d} • {r['name']}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
+            ctk.CTkLabel(box0, text=f"Type: {r['type']}", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w")
 
-            # Name
-            ctk.CTkLabel(
-                row_frame,
-                text=r["name"],
-                font=Theme.font_body_bold(),
-                text_color=Theme.TEXT_MAIN,
-                anchor="w"
-            ).grid(row=0, column=1, sticky="ew", padx=6, pady=6)
-
-            # Type
-            ctk.CTkLabel(
-                row_frame,
-                text=r["type"],
-                font=Theme.font_small(),
-                text_color=Theme.TEXT_MUTED,
-                anchor="w"
-            ).grid(row=0, column=2, sticky="ew", padx=6, pady=6)
-
-            # Area
+            # Col 1: Area
             ctk.CTkLabel(
                 row_frame,
                 text=f"📍 {r['area']}",
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MAIN,
                 anchor="w"
-            ).grid(row=0, column=3, sticky="ew", padx=6, pady=6)
+            ).grid(row=0, column=1, sticky="ew", padx=6, pady=6)
 
-            # Severity badge
+            # Col 2: Severity badge
             bg = sev_colors.get(r["severity"], Theme.BORDER_COLOR)
             ctk.CTkLabel(
                 row_frame,
@@ -297,22 +363,45 @@ class DisasterView(ctk.CTkFrame):
                 text_color="white",
                 corner_radius=6,
                 font=Theme.font_badge()
-            ).grid(row=0, column=4, padx=6, pady=6)
+            ).grid(row=0, column=2, padx=6, pady=6)
 
-            # Affected
+            # Col 3: Affected Population
             ctk.CTkLabel(
                 row_frame,
                 text=f"👥 {r['affected_people']:,}",
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MAIN,
                 anchor="w"
-            ).grid(row=0, column=5, sticky="ew", padx=6, pady=6)
+            ).grid(row=0, column=3, sticky="ew", padx=6, pady=6)
 
-            # Action button
-            btn_action = ctk.CTkButton(
+            # Col 4: Reported Time
+            time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
+            ctk.CTkLabel(
                 row_frame,
+                text=f"🕒 {time_str}",
+                font=Theme.font_small(),
+                text_color=Theme.TEXT_MUTED,
+                anchor="w"
+            ).grid(row=0, column=4, sticky="ew", padx=6, pady=6)
+
+            # Col 5: Action button & status
+            action_box = ctk.CTkFrame(row_frame, fg_color="transparent")
+            action_box.grid(row=0, column=5, padx=8, pady=6)
+
+            status_pill = ctk.CTkLabel(
+                action_box,
+                text=" ACTIVE " if is_active else " RESOLVED ",
+                fg_color=Theme.DANGER_BG if is_active else Theme.SUCCESS_BG,
+                text_color=Theme.DANGER if is_active else Theme.SUCCESS,
+                corner_radius=6,
+                font=Theme.font_badge()
+            )
+            status_pill.pack(side="left", padx=(0, 4))
+
+            btn_action = ctk.CTkButton(
+                action_box,
                 text="Resolve" if is_active else "Reopen",
-                width=80,
+                width=68,
                 height=24,
                 corner_radius=5,
                 fg_color=Theme.SUCCESS if is_active else Theme.BORDER_COLOR,
@@ -320,4 +409,4 @@ class DisasterView(ctk.CTkFrame):
                 font=Theme.font_small(),
                 command=lambda did=r["id"], st=r["status"]: self._toggle_resolve(did, st)
             )
-            btn_action.grid(row=0, column=6, padx=8, pady=6)
+            btn_action.pack(side="left")

@@ -341,25 +341,74 @@ class CitizenPortal(ctk.CTk):
     def _build_track_tab(self):
         tab = self.tab_track
         tab.grid_columnconfigure(0, weight=1)
-        tab.grid_rowconfigure(1, weight=1)
+        tab.grid_rowconfigure(2, weight=1)
 
         head = ctk.CTkFrame(tab, fg_color="transparent")
         head.grid(row=0, column=0, sticky="ew", padx=10, pady=(6, 4))
         head.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(head, text="My Emergency Request Status & Resolution Tracker", font=Theme.font_sub(), text_color=Theme.TEXT_MAIN).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(head, text="Monitor your dispatch tickets in real-time as rescue operations proceed", font=Theme.font_small(), text_color=Theme.TEXT_MUTED).grid(row=1, column=0, sticky="w")
+        ctk.CTkLabel(head, text="Monitor your dispatch tickets in real-time with posted timestamps, location, and rescue updates", font=Theme.font_small(), text_color=Theme.TEXT_MUTED).grid(row=1, column=0, sticky="w")
 
         btn_ref = ctk.CTkButton(head, text="🔄 Refresh Status", width=100, height=28, corner_radius=6, fg_color=Theme.PRIMARY_LIGHT, text_color=Theme.PRIMARY, hover_color=Theme.BORDER_COLOR, font=Theme.font_small(), command=self._refresh_track_list)
         btn_ref.grid(row=0, column=1, rowspan=2, sticky="e")
 
+        # Search & Filter bar
+        filter_bar = ctk.CTkFrame(tab, corner_radius=8, fg_color=Theme.BG_CARD_ALT, border_width=1, border_color=Theme.BORDER_COLOR_LIGHT)
+        filter_bar.grid(row=1, column=0, sticky="ew", padx=8, pady=(0, 6))
+        filter_bar.grid_columnconfigure(0, weight=1)
+
+        self.track_search = ctk.CTkEntry(
+            filter_bar,
+            placeholder_text="🔍 Search by incident type, landmark or location...",
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small()
+        )
+        self.track_search.grid(row=0, column=0, padx=6, pady=6, sticky="ew")
+        self.track_search.bind("<KeyRelease>", lambda e: self._refresh_track_list())
+
+        self.track_status_filter = ctk.CTkComboBox(
+            filter_bar,
+            values=["All Statuses", "PENDING", "RESOLVED"],
+            width=130,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self._refresh_track_list()
+        )
+        self.track_status_filter.grid(row=0, column=1, padx=4, pady=6)
+        self.track_status_filter.set("All Statuses")
+
+        self.track_prio_filter = ctk.CTkComboBox(
+            filter_bar,
+            values=["All Priorities", "CRITICAL", "HIGH", "MODERATE", "LOW"],
+            width=130,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self._refresh_track_list()
+        )
+        self.track_prio_filter.grid(row=0, column=2, padx=(4, 6), pady=6)
+        self.track_prio_filter.set("All Priorities")
+
         self.track_scroll = ctk.CTkScrollableFrame(tab, fg_color="transparent")
-        self.track_scroll.grid(row=1, column=0, sticky="nsew", padx=6, pady=4)
+        self.track_scroll.grid(row=2, column=0, sticky="nsew", padx=6, pady=4)
         self.track_scroll.grid_columnconfigure(0, weight=1)
 
         self._refresh_track_list()
 
     def _refresh_track_list(self):
+        from utils.helper import format_datetime
         for w in self.track_scroll.winfo_children():
             w.destroy()
 
@@ -374,15 +423,35 @@ class CitizenPortal(ctk.CTk):
         finally:
             conn.close()
 
-        if not rows:
+        # Apply Filters
+        query = (self.track_search.get().strip().lower() if hasattr(self, 'track_search') else "")
+        status_f = (self.track_status_filter.get() if hasattr(self, 'track_status_filter') else "All Statuses")
+        prio_f = (self.track_prio_filter.get() if hasattr(self, 'track_prio_filter') else "All Priorities")
+
+        filtered = []
+        for r in rows:
+            if status_f != "All Statuses" and r["status"].upper() != status_f.upper():
+                continue
+            if prio_f != "All Priorities" and r["priority_level"].upper() != prio_f.upper():
+                continue
+            if query:
+                loc_txt = str(r["location"] or "").lower()
+                type_txt = str(r["emergency_type"] or "").lower()
+                req_txt = str(r["requester_name"] or "").lower()
+                if query not in loc_txt and query not in type_txt and query not in req_txt:
+                    continue
+            filtered.append(r)
+
+        if not filtered:
             box = ctk.CTkFrame(self.track_scroll, fg_color=Theme.BG_CARD_ALT, corner_radius=10)
             box.pack(fill="x", padx=10, pady=20)
-            ctk.CTkLabel(box, text="You have not logged any emergency requests yet.", font=Theme.font_body(), text_color=Theme.TEXT_MUTED).pack(pady=20)
+            msg = "No emergency requests match your current search/filter." if rows else "You have not logged any emergency requests yet."
+            ctk.CTkLabel(box, text=msg, font=Theme.font_body(), text_color=Theme.TEXT_MUTED).pack(pady=20)
             return
 
         color_map = {"CRITICAL": Theme.DANGER, "HIGH": Theme.WARNING, "MODERATE": Theme.INFO, "LOW": Theme.SUCCESS}
 
-        for r in rows:
+        for r in filtered:
             card = ctk.CTkFrame(self.track_scroll, corner_radius=10, fg_color=Theme.BG_CARD_ALT, border_width=1, border_color=Theme.BORDER_COLOR_LIGHT)
             card.pack(fill="x", padx=4, pady=4)
             card.grid_columnconfigure(1, weight=1)
@@ -399,8 +468,9 @@ class CitizenPortal(ctk.CTk):
             info = ctk.CTkFrame(card, fg_color="transparent")
             info.grid(row=0, column=1, sticky="w", padx=4, pady=(8, 2))
 
+            time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
             ctk.CTkLabel(info, text=f"{r['emergency_type']}  •  📍 {r['location']}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
-            ctk.CTkLabel(info, text=f"Affected: {r['people_affected']} | Injured: {r['injured']} | Risk Rating: {r['priority_score']}/100", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w")
+            ctk.CTkLabel(info, text=f"🕒 Posted: {time_str}  |  👥 Casualties: {r['people_affected']} (Injured: {r['injured']})  |  Risk Rating: {r['priority_score']}/100", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w", pady=(1, 0))
 
             # Status pill on right
             is_res = (r["status"] == "RESOLVED")
@@ -414,25 +484,59 @@ class CitizenPortal(ctk.CTk):
     def _build_shelters_tab(self):
         tab = self.tab_shelters
         tab.grid_columnconfigure(0, weight=1)
-        tab.grid_rowconfigure(1, weight=1)
+        tab.grid_rowconfigure(2, weight=1)
 
         head = ctk.CTkFrame(tab, fg_color="transparent")
         head.grid(row=0, column=0, sticky="ew", padx=10, pady=(6, 4))
         head.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(head, text="Nearby Safe Evacuation Shelters", font=Theme.font_sub(), text_color=Theme.TEXT_MAIN).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(head, text="Public shelter facilities with verified bed capacity and safety status", font=Theme.font_small(), text_color=Theme.TEXT_MUTED).grid(row=1, column=0, sticky="w")
+        ctk.CTkLabel(head, text="Public shelter facilities with verified bed capacity, location, and safety status", font=Theme.font_small(), text_color=Theme.TEXT_MUTED).grid(row=1, column=0, sticky="w")
 
         btn_ref = ctk.CTkButton(head, text="🔄 Refresh Shelters", width=110, height=28, corner_radius=6, fg_color=Theme.PRIMARY_LIGHT, text_color=Theme.PRIMARY, hover_color=Theme.BORDER_COLOR, font=Theme.font_small(), command=self._refresh_shelters_list)
         btn_ref.grid(row=0, column=1, rowspan=2, sticky="e")
 
+        # Search & Filter bar
+        sh_filter_bar = ctk.CTkFrame(tab, corner_radius=8, fg_color=Theme.BG_CARD_ALT, border_width=1, border_color=Theme.BORDER_COLOR_LIGHT)
+        sh_filter_bar.grid(row=1, column=0, sticky="ew", padx=8, pady=(0, 6))
+        sh_filter_bar.grid_columnconfigure(0, weight=1)
+
+        self.sh_search = ctk.CTkEntry(
+            sh_filter_bar,
+            placeholder_text="🔍 Search shelter by name or location...",
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small()
+        )
+        self.sh_search.grid(row=0, column=0, padx=6, pady=6, sticky="ew")
+        self.sh_search.bind("<KeyRelease>", lambda e: self._refresh_shelters_list())
+
+        self.sh_status_filter = ctk.CTkComboBox(
+            sh_filter_bar,
+            values=["All Shelters", "Available Only", "Full Only"],
+            width=150,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self._refresh_shelters_list()
+        )
+        self.sh_status_filter.grid(row=0, column=1, padx=(4, 6), pady=6)
+        self.sh_status_filter.set("All Shelters")
+
         self.sh_scroll = ctk.CTkScrollableFrame(tab, fg_color="transparent")
-        self.sh_scroll.grid(row=1, column=0, sticky="nsew", padx=6, pady=4)
+        self.sh_scroll.grid(row=2, column=0, sticky="nsew", padx=6, pady=4)
         self.sh_scroll.grid_columnconfigure(0, weight=1)
 
         self._refresh_shelters_list()
 
     def _refresh_shelters_list(self):
+        from utils.helper import format_datetime
         for w in self.sh_scroll.winfo_children():
             w.destroy()
 
@@ -442,11 +546,34 @@ class CitizenPortal(ctk.CTk):
         finally:
             conn.close()
 
-        if not rows:
-            ctk.CTkLabel(self.sh_scroll, text="No shelters registered in system.", font=Theme.font_small(), text_color=Theme.TEXT_MUTED).pack(pady=20)
+        # Apply Filters
+        query = (self.sh_search.get().strip().lower() if hasattr(self, 'sh_search') else "")
+        status_f = (self.sh_status_filter.get() if hasattr(self, 'sh_status_filter') else "All Shelters")
+
+        filtered = []
+        for r in rows:
+            cap = r["capacity"]
+            occ = r["occupied"]
+            avail = max(0, cap - occ)
+
+            if status_f == "Available Only" and avail <= 0:
+                continue
+            if status_f == "Full Only" and avail > 0:
+                continue
+
+            if query:
+                name_txt = str(r["name"] or "").lower()
+                loc_txt = str(r["location"] or "").lower()
+                if query not in name_txt and query not in loc_txt:
+                    continue
+            filtered.append(r)
+
+        if not filtered:
+            msg = "No shelters found matching your search/filter criteria." if rows else "No shelters registered in system."
+            ctk.CTkLabel(self.sh_scroll, text=msg, font=Theme.font_small(), text_color=Theme.TEXT_MUTED).pack(pady=20)
             return
 
-        for r in rows:
+        for r in filtered:
             cap = r["capacity"]
             occ = r["occupied"]
             avail = max(0, cap - occ)
@@ -463,8 +590,9 @@ class CitizenPortal(ctk.CTk):
             info = ctk.CTkFrame(card, fg_color="transparent")
             info.grid(row=0, column=1, sticky="w", padx=4, pady=8)
 
+            time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
             ctk.CTkLabel(info, text=f"{r['name']}  •  📍 {r['location']}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
-            ctk.CTkLabel(info, text=f"Available Beds: {avail:,} of {cap:,} capacity", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w")
+            ctk.CTkLabel(info, text=f"Available Beds: {avail:,} of {cap:,} capacity  |  🕒 Added: {time_str}", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w", pady=(1, 0))
 
             # Progress bar
             pbar = ctk.CTkProgressBar(card, width=140, height=8, corner_radius=4)

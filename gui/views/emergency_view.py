@@ -3,12 +3,13 @@ from tkinter import messagebox
 from database import get_connection
 from algorithms.risk_score import calculate_risk
 from gui.theme import Theme
+from utils.helper import format_datetime
 
 class EmergencyView(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, fg_color="transparent", **kwargs)
         self.grid_columnconfigure(0, weight=4)
-        self.grid_columnconfigure(1, weight=5)
+        self.grid_columnconfigure(1, weight=6)
         self.grid_rowconfigure(1, weight=1)
 
         self._build_header()
@@ -39,7 +40,7 @@ class EmergencyView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="Automated multi-criteria triage formula ranking SOS alerts by urgency, casualties, and life threats",
+            text="Automated multi-criteria triage formula ranking SOS alerts by urgency, location, casualties, and time tracking",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
             text_color=Theme.TEXT_MUTED
         ).pack(anchor="w", pady=(1, 0))
@@ -77,7 +78,7 @@ class EmergencyView(ctk.CTkFrame):
 
         self.ent_loc = ctk.CTkEntry(
             card,
-            placeholder_text="Incident Landmark / Location (e.g. Ward 4)",
+            placeholder_text="Incident Landmark / Location (e.g. Ward 4, Building 3)",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -133,7 +134,7 @@ class EmergencyView(ctk.CTkFrame):
 
         self.ent_child = ctk.CTkEntry(
             cnt_frame,
-            placeholder_text="Child/Elderly",
+            placeholder_text="Child/Elder",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -146,49 +147,48 @@ class EmergencyView(ctk.CTkFrame):
 
         # Switches
         sw_frame = ctk.CTkFrame(card, fg_color="transparent")
-        sw_frame.pack(fill="x", padx=10, pady=2)
-        sw_frame.grid_columnconfigure((0, 1), weight=1)
+        sw_frame.pack(fill="x", padx=10, pady=4)
 
         self.sw_life = ctk.CTkSwitch(
             sw_frame,
-            text="Life Threat (+40)",
+            text="Life in Immediate Threat?",
             command=self._update_live_score,
             font=Theme.font_small(),
             progress_color=Theme.DANGER
         )
-        self.sw_life.grid(row=0, column=0, sticky="w", pady=2)
+        self.sw_life.pack(anchor="w", pady=2)
 
         self.sw_shortage = ctk.CTkSwitch(
             sw_frame,
-            text="Shortage (+10)",
+            text="Severe Food / Water / Med Shortage?",
             command=self._update_live_score,
             font=Theme.font_small(),
             progress_color=Theme.WARNING
         )
-        self.sw_shortage.grid(row=0, column=1, sticky="w", pady=2)
+        self.sw_shortage.pack(anchor="w", pady=2)
 
-        # Live Score Preview Card (Compact)
+        # Realtime Triage Preview Card
         prev_card = ctk.CTkFrame(
             card,
             corner_radius=8,
             fg_color=Theme.BG_CARD_ALT,
             border_width=1,
-            border_color=Theme.BORDER_ACCENT
+            border_color=Theme.BORDER_COLOR_LIGHT
         )
-        prev_card.pack(fill="x", padx=10, pady=(6, 6))
+        prev_card.pack(fill="x", padx=10, pady=(6, 8))
 
-        prev_head = ctk.CTkFrame(prev_card, fg_color="transparent")
-        prev_head.pack(fill="x", padx=10, pady=(6, 2))
+        phead = ctk.CTkFrame(prev_card, fg_color="transparent")
+        phead.pack(fill="x", padx=10, pady=(8, 2))
 
         ctk.CTkLabel(
-            prev_head,
-            text="⚡ AUTOMATED RISK SCORE",
+            phead,
+            text="CALCULATED RISK SCORE",
             font=Theme.font_badge(),
             text_color=Theme.TEXT_MUTED
         ).pack(side="left")
 
         self.badge_preview = ctk.CTkLabel(
-            prev_head,
+            phead,
             text=" LOW ",
             fg_color=Theme.SUCCESS,
             text_color="white",
@@ -231,8 +231,56 @@ class EmergencyView(ctk.CTkFrame):
             border_color=Theme.BORDER_COLOR_LIGHT
         )
         container.grid(row=1, column=1, sticky="nsew", padx=(6, 12), pady=(0, 12))
-        container.grid_rowconfigure(1, weight=1)
+        container.grid_rowconfigure(2, weight=1)
         container.grid_columnconfigure(0, weight=1)
+
+        # Filter & Search Bar
+        filter_bar = ctk.CTkFrame(container, fg_color="transparent")
+        filter_bar.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
+        filter_bar.grid_columnconfigure(0, weight=1)
+
+        self.queue_search = ctk.CTkEntry(
+            filter_bar,
+            placeholder_text="🔍 Search caller, location or emergency type...",
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small()
+        )
+        self.queue_search.grid(row=0, column=0, padx=(0, 4), sticky="ew")
+        self.queue_search.bind("<KeyRelease>", lambda e: self.refresh())
+
+        self.f_prio = ctk.CTkComboBox(
+            filter_bar,
+            values=["All Priorities", "CRITICAL", "HIGH", "MODERATE", "LOW"],
+            width=130,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self.refresh()
+        )
+        self.f_prio.grid(row=0, column=1, padx=4)
+        self.f_prio.set("All Priorities")
+
+        self.f_req_status = ctk.CTkComboBox(
+            filter_bar,
+            values=["All Status", "PENDING", "RESOLVED"],
+            width=120,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self.refresh()
+        )
+        self.f_req_status.grid(row=0, column=2, padx=4)
+        self.f_req_status.set("All Status")
 
         # Table Header
         th = ctk.CTkFrame(
@@ -241,22 +289,22 @@ class EmergencyView(ctk.CTkFrame):
             corner_radius=6,
             fg_color=Theme.BG_HEADER
         )
-        th.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
-        th.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+        th.grid(row=1, column=0, sticky="ew", padx=8, pady=(4, 2))
+        th.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-        cols = ["INCIDENT & TYPE", "LOCATION & CASUALTIES", "RISK SCORE", "PRIORITY", "ACTION"]
+        cols = ["INCIDENT & TYPE", "📍 LOCATION & CALLER", "👥 CASUALTIES", "🕒 LOGGED TIME", "RISK & PRIO", "ACTION"]
         for i, title in enumerate(cols):
             ctk.CTkLabel(
                 th,
                 text=title,
                 font=Theme.font_badge(),
                 text_color=Theme.TEXT_MUTED,
-                anchor="w" if i < 4 else "center"
+                anchor="w" if i < 5 else "center"
             ).grid(row=0, column=i, sticky="ew", padx=6, pady=4)
 
         self.queue_list = ctk.CTkScrollableFrame(container, fg_color="transparent")
-        self.queue_list.grid(row=1, column=0, sticky="nsew", padx=4, pady=2)
-        self.queue_list.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+        self.queue_list.grid(row=2, column=0, sticky="nsew", padx=4, pady=2)
+        self.queue_list.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
     def _get_form_values(self):
         try:
@@ -358,10 +406,30 @@ class EmergencyView(ctk.CTkFrame):
         finally:
             conn.close()
 
-        if not rows:
+        # Filtering
+        q = self.queue_search.get().strip().lower() if hasattr(self, 'queue_search') else ""
+        prio_f = self.f_prio.get() if hasattr(self, 'f_prio') else "All Priorities"
+        status_f = self.f_req_status.get() if hasattr(self, 'f_req_status') else "All Status"
+
+        filtered = []
+        for r in rows:
+            if prio_f != "All Priorities" and r["priority_level"].upper() != prio_f.upper():
+                continue
+            if status_f != "All Status" and r["status"].upper() != status_f.upper():
+                continue
+            if q:
+                req_txt = str(r["requester_name"] or "").lower()
+                loc_txt = str(r["location"] or "").lower()
+                etype_txt = str(r["emergency_type"] or "").lower()
+                if q not in req_txt and q not in loc_txt and q not in etype_txt:
+                    continue
+            filtered.append(r)
+
+        if not filtered:
+            msg = "No emergency records match your filter criteria." if rows else "No emergency records in triage queue."
             lbl = ctk.CTkLabel(
                 self.queue_list,
-                text="No emergency records in triage queue.",
+                text=msg,
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MUTED
             )
@@ -375,7 +443,7 @@ class EmergencyView(ctk.CTkFrame):
             "LOW": Theme.SUCCESS
         }
 
-        for idx, r in enumerate(rows):
+        for idx, r in enumerate(filtered):
             is_pending = (r["status"] == "PENDING")
             row_frame = ctk.CTkFrame(
                 self.queue_list,
@@ -385,7 +453,7 @@ class EmergencyView(ctk.CTkFrame):
                 border_color=Theme.BORDER_COLOR_LIGHT
             )
             row_frame.pack(fill="x", padx=2, pady=2)
-            row_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+            row_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
             # Col 0: ID & Type
             box0 = ctk.CTkFrame(row_frame, fg_color="transparent")
@@ -393,33 +461,47 @@ class EmergencyView(ctk.CTkFrame):
             ctk.CTkLabel(box0, text=f"ER-{r['id']:04d}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
             ctk.CTkLabel(box0, text=r['emergency_type'], font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w")
 
-            # Col 1: Location & Casualties
+            # Col 1: Location & Caller
             box1 = ctk.CTkFrame(row_frame, fg_color="transparent")
             box1.grid(row=0, column=1, sticky="ew", padx=6, pady=4)
-            ctk.CTkLabel(box1, text=f"📍 {r['location']}", font=Theme.font_small(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
-            ctk.CTkLabel(box1, text=f"👥 {r['people_affected']} | 🩹 {r['injured']}", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w")
+            ctk.CTkLabel(box1, text=f"📍 {r['location']}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
+            caller_name = r['requester_name'] if r['requester_name'] else "Anonymous Caller"
+            ctk.CTkLabel(box1, text=f"Caller: {caller_name}", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w")
 
-            # Col 2: Score
+            # Col 2: Casualties
             ctk.CTkLabel(
                 row_frame,
-                text=f"{r['priority_score']} / 100",
-                font=Theme.font_body_bold(),
-                text_color=Theme.PRIMARY,
+                text=f"👥 {r['people_affected']} (🩹 {r['injured']})",
+                font=Theme.font_small(),
+                text_color=Theme.TEXT_MAIN,
                 anchor="w"
             ).grid(row=0, column=2, sticky="ew", padx=6, pady=4)
 
-            # Col 3: Level Badge
-            bg = color_map.get(r["priority_level"], Theme.BORDER_COLOR)
+            # Col 3: Logged Time
+            time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
             ctk.CTkLabel(
                 row_frame,
+                text=f"🕒 {time_str}",
+                font=Theme.font_small(),
+                text_color=Theme.TEXT_MUTED,
+                anchor="w"
+            ).grid(row=0, column=3, sticky="ew", padx=6, pady=4)
+
+            # Col 4: Score & Level Badge
+            box4 = ctk.CTkFrame(row_frame, fg_color="transparent")
+            box4.grid(row=0, column=4, sticky="ew", padx=6, pady=4)
+            ctk.CTkLabel(box4, text=f"Score: {r['priority_score']}/100", font=Theme.font_small(), text_color=Theme.PRIMARY, anchor="w").pack(anchor="w")
+            bg = color_map.get(r["priority_level"], Theme.BORDER_COLOR)
+            ctk.CTkLabel(
+                box4,
                 text=f" {r['priority_level']} ",
                 fg_color=bg,
                 text_color="white",
                 corner_radius=6,
                 font=Theme.font_badge()
-            ).grid(row=0, column=3, padx=4, pady=4)
+            ).pack(anchor="w", pady=(2, 0))
 
-            # Col 4: Action
+            # Col 5: Action
             if is_pending:
                 btn = ctk.CTkButton(
                     row_frame,
@@ -432,11 +514,11 @@ class EmergencyView(ctk.CTkFrame):
                     font=Theme.font_small(),
                     command=lambda rid=r["id"]: self._resolve_request(rid)
                 )
-                btn.grid(row=0, column=4, padx=6, pady=4)
+                btn.grid(row=0, column=5, padx=6, pady=4)
             else:
                 ctk.CTkLabel(
                     row_frame,
                     text="✅ Resolved",
                     font=Theme.font_small(),
                     text_color=Theme.SUCCESS
-                ).grid(row=0, column=4, padx=6, pady=4)
+                ).grid(row=0, column=5, padx=6, pady=4)

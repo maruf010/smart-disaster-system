@@ -26,11 +26,13 @@ def list_disasters():
     if not rows:
         print("No disasters found.")
         return
+    from utils.helper import format_datetime
     for r in rows:
+        t_str = format_datetime(r['created_at']) if 'created_at' in r.keys() else 'N/A'
         print(
             f"ID:{r['id']} | {r['name']} | Type:{r['type']} | "
             f"Area:{r['area']} | Severity:{r['severity']} | "
-            f"Affected:{r['affected_people']} | Status:{r['status']}"
+            f"Affected:{r['affected_people']} | Status:{r['status']} | Time:{t_str}"
         )
 
 def close_disaster():

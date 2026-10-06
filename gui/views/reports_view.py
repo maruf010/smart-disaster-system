@@ -4,6 +4,7 @@ import os
 import csv
 from database import get_connection
 from gui.theme import Theme
+from utils.helper import format_datetime
 
 class ReportsView(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
@@ -39,7 +40,7 @@ class ReportsView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="Review incident resolution records and export compliance triage reports for authorities and emergency agencies",
+            text="Review incident resolution records, posted locations, timestamps, and export compliance triage reports for authorities",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
             text_color=Theme.TEXT_MUTED
         ).pack(anchor="w", pady=(1, 0))
@@ -93,31 +94,80 @@ class ReportsView(ctk.CTkFrame):
             border_color=Theme.BORDER_COLOR_LIGHT
         )
         container.grid(row=2, column=0, sticky="nsew", padx=12, pady=(0, 12))
-        container.grid_rowconfigure(1, weight=1)
+        container.grid_rowconfigure(2, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
+        # Search & Filter bar
+        filter_bar = ctk.CTkFrame(container, fg_color="transparent")
+        filter_bar.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
+        filter_bar.grid_columnconfigure(0, weight=1)
+
+        self.rep_search = ctk.CTkEntry(
+            filter_bar,
+            placeholder_text="🔍 Search audit log by caller, location or emergency type...",
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small()
+        )
+        self.rep_search.grid(row=0, column=0, padx=(0, 4), sticky="ew")
+        self.rep_search.bind("<KeyRelease>", lambda e: self.refresh())
+
+        self.f_rep_prio = ctk.CTkComboBox(
+            filter_bar,
+            values=["All Priorities", "CRITICAL", "HIGH", "MODERATE", "LOW"],
+            width=130,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self.refresh()
+        )
+        self.f_rep_prio.grid(row=0, column=1, padx=4)
+        self.f_rep_prio.set("All Priorities")
+
+        self.f_rep_status = ctk.CTkComboBox(
+            filter_bar,
+            values=["All Status", "PENDING", "RESOLVED"],
+            width=120,
+            height=30,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self.refresh()
+        )
+        self.f_rep_status.grid(row=0, column=2, padx=4)
+        self.f_rep_status.set("All Status")
+
+        # Table Header
         th = ctk.CTkFrame(
             container,
             height=32,
             corner_radius=6,
             fg_color=Theme.BG_HEADER
         )
-        th.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
-        th.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+        th.grid(row=1, column=0, sticky="ew", padx=8, pady=(4, 2))
+        th.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
 
-        cols = ["INCIDENT ID", "CALLER / CONTACT", "INCIDENT LOCATION", "EMERGENCY TYPE", "PRIORITY RATING", "AUDIT STATUS"]
+        cols = ["INCIDENT ID", "CALLER / CONTACT", "📍 LOCATION", "EMERGENCY TYPE", "PRIORITY RATING", "🕒 LOGGED TIME", "AUDIT STATUS"]
         for idx, col in enumerate(cols):
             ctk.CTkLabel(
                 th,
                 text=col,
                 font=Theme.font_badge(),
                 text_color=Theme.TEXT_MUTED,
-                anchor="w" if idx < 5 else "center"
+                anchor="w" if idx < 6 else "center"
             ).grid(row=0, column=idx, sticky="ew", padx=8, pady=4)
 
         self.scroll_list = ctk.CTkScrollableFrame(container, fg_color="transparent")
-        self.scroll_list.grid(row=1, column=0, sticky="nsew", padx=4, pady=2)
-        self.scroll_list.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+        self.scroll_list.grid(row=2, column=0, sticky="nsew", padx=4, pady=2)
+        self.scroll_list.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
 
     def _export_csv(self):
         os.makedirs("reports", exist_ok=True)
@@ -169,10 +219,30 @@ class ReportsView(ctk.CTkFrame):
         finally:
             conn.close()
 
-        if not rows:
+        # Filtering
+        q = self.rep_search.get().strip().lower() if hasattr(self, 'rep_search') else ""
+        prio_f = self.f_rep_prio.get() if hasattr(self, 'f_rep_prio') else "All Priorities"
+        status_f = self.f_rep_status.get() if hasattr(self, 'f_rep_status') else "All Status"
+
+        filtered = []
+        for r in rows:
+            if prio_f != "All Priorities" and r["priority_level"].upper() != prio_f.upper():
+                continue
+            if status_f != "All Status" and r["status"].upper() != status_f.upper():
+                continue
+            if q:
+                req_txt = str(r["requester_name"] or "").lower()
+                loc_txt = str(r["location"] or "").lower()
+                etype_txt = str(r["emergency_type"] or "").lower()
+                if q not in req_txt and q not in loc_txt and q not in etype_txt:
+                    continue
+            filtered.append(r)
+
+        if not filtered:
+            msg = "No triage records match your filter criteria." if rows else "No triage records available for reporting."
             lbl = ctk.CTkLabel(
                 self.scroll_list,
-                text="No triage records available for reporting.",
+                text=msg,
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MUTED
             )
@@ -186,7 +256,7 @@ class ReportsView(ctk.CTkFrame):
             "LOW": Theme.SUCCESS
         }
 
-        for idx, r in enumerate(rows):
+        for idx, r in enumerate(filtered):
             row_frame = ctk.CTkFrame(
                 self.scroll_list,
                 fg_color=Theme.BG_ROW_EVEN if idx % 2 == 0 else "transparent",
@@ -195,13 +265,21 @@ class ReportsView(ctk.CTkFrame):
                 border_color=Theme.BORDER_COLOR_LIGHT
             )
             row_frame.pack(fill="x", padx=2, pady=2)
-            row_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+            row_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
 
+            # ID
             ctk.CTkLabel(row_frame, text=f"ER-{r['id']:04d}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").grid(row=0, column=0, sticky="ew", padx=8, pady=6)
+            
+            # Requester
             ctk.CTkLabel(row_frame, text=r["requester_name"] or "Anonymous", font=Theme.font_small(), text_color=Theme.TEXT_MAIN, anchor="w").grid(row=0, column=1, sticky="ew", padx=6, pady=6)
+            
+            # Location
             ctk.CTkLabel(row_frame, text=f"📍 {r['location']}", font=Theme.font_small(), text_color=Theme.TEXT_MAIN, anchor="w").grid(row=0, column=2, sticky="ew", padx=6, pady=6)
+            
+            # Type
             ctk.CTkLabel(row_frame, text=r["emergency_type"], font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=3, sticky="ew", padx=6, pady=6)
 
+            # Priority
             bg = color_map.get(r["priority_level"], Theme.BORDER_COLOR)
             ctk.CTkLabel(
                 row_frame,
@@ -212,6 +290,17 @@ class ReportsView(ctk.CTkFrame):
                 font=Theme.font_badge()
             ).grid(row=0, column=4, padx=6, pady=6)
 
+            # Logged Time
+            time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
+            ctk.CTkLabel(
+                row_frame,
+                text=f"🕒 {time_str}",
+                font=Theme.font_small(),
+                text_color=Theme.TEXT_MUTED,
+                anchor="w"
+            ).grid(row=0, column=5, sticky="ew", padx=6, pady=6)
+
+            # Status
             is_res = (r["status"] == "RESOLVED")
             st_color = Theme.SUCCESS if is_res else Theme.WARNING
             st_icon = "✅ Resolved" if is_res else "⏳ Pending"
@@ -221,4 +310,4 @@ class ReportsView(ctk.CTkFrame):
                 font=Theme.font_small(),
                 text_color=st_color,
                 anchor="center"
-            ).grid(row=0, column=5, sticky="ew", padx=6, pady=6)
+            ).grid(row=0, column=6, sticky="ew", padx=6, pady=6)

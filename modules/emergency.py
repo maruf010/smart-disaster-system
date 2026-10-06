@@ -46,11 +46,13 @@ def list_requests():
     if not rows:
         print("No emergency requests.")
         return
+    from utils.helper import format_datetime
     for r in rows:
+        t_str = format_datetime(r['created_at']) if 'created_at' in r.keys() else 'N/A'
         print(
             f"ER-{r['id']:04d} | {r['emergency_type']} | "
-            f"{r['location']} | Score:{r['priority_score']} | "
-            f"{r['priority_level']} | {r['status']}"
+            f"📍 {r['location']} | Score:{r['priority_score']} | "
+            f"{r['priority_level']} | Status:{r['status']} | 🕒 {t_str}"
         )
 
 def resolve_request():

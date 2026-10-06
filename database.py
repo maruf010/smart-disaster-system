@@ -52,7 +52,8 @@ def init_db():
         name TEXT NOT NULL,
         location TEXT NOT NULL,
         capacity INTEGER NOT NULL,
-        occupied INTEGER DEFAULT 0
+        occupied INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS resources (
@@ -61,7 +62,8 @@ def init_db():
         category TEXT NOT NULL,
         quantity REAL DEFAULT 0,
         unit TEXT NOT NULL,
-        minimum_stock REAL DEFAULT 0
+        minimum_stock REAL DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS rescue_teams (
@@ -70,7 +72,8 @@ def init_db():
         specialization TEXT NOT NULL,
         members INTEGER DEFAULT 0,
         current_location TEXT NOT NULL,
-        status TEXT DEFAULT 'AVAILABLE'
+        status TEXT DEFAULT 'AVAILABLE',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS volunteers (
@@ -79,7 +82,8 @@ def init_db():
         skill TEXT NOT NULL,
         location TEXT NOT NULL,
         contact TEXT,
-        availability TEXT DEFAULT 'YES'
+        availability TEXT DEFAULT 'YES',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS roads (
@@ -125,15 +129,23 @@ def init_db():
         )
 
     # Safe migrations for existing databases
-    user_cols = [c[1] for c in cur.execute("PRAGMA table_info(users)").fetchall()]
-    if "full_name" not in user_cols:
-        cur.execute("ALTER TABLE users ADD COLUMN full_name TEXT DEFAULT ''")
-    if "phone" not in user_cols:
-        cur.execute("ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''")
+    def ensure_column(table_name, col_name, col_def, fill_timestamp=False):
+        cols = [c[1] for c in cur.execute(f"PRAGMA table_info({table_name})").fetchall()]
+        if col_name not in cols:
+            cur.execute(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_def}")
+            if fill_timestamp:
+                cur.execute(f"UPDATE {table_name} SET {col_name} = CURRENT_TIMESTAMP WHERE {col_name} IS NULL OR {col_name} = ''")
 
-    req_cols = [c[1] for c in cur.execute("PRAGMA table_info(emergency_requests)").fetchall()]
-    if "user_id" not in req_cols:
-        cur.execute("ALTER TABLE emergency_requests ADD COLUMN user_id INTEGER DEFAULT NULL")
+    ensure_column("users", "full_name", "TEXT DEFAULT ''")
+    ensure_column("users", "phone", "TEXT DEFAULT ''")
+    ensure_column("emergency_requests", "user_id", "INTEGER DEFAULT NULL")
+    ensure_column("emergency_requests", "created_at", "TEXT DEFAULT ''", fill_timestamp=True)
+    ensure_column("disasters", "created_at", "TEXT DEFAULT ''", fill_timestamp=True)
+    ensure_column("shelters", "created_at", "TEXT DEFAULT ''", fill_timestamp=True)
+    ensure_column("resources", "created_at", "TEXT DEFAULT ''", fill_timestamp=True)
+    ensure_column("rescue_teams", "created_at", "TEXT DEFAULT ''", fill_timestamp=True)
+    ensure_column("volunteers", "created_at", "TEXT DEFAULT ''", fill_timestamp=True)
+    ensure_column("resource_allocations", "created_at", "TEXT DEFAULT ''", fill_timestamp=True)
 
     conn.commit()
     conn.close()

@@ -3,6 +3,7 @@ from tkinter import messagebox
 from database import get_connection
 from algorithms.resource_allocation import proportional_allocation
 from gui.theme import Theme
+from utils.helper import format_datetime
 
 class ResourceView(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
@@ -38,7 +39,7 @@ class ResourceView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="Track warehouse stockpiles, minimum inventory alerts, and perform demographic-proportional relief distribution",
+            text="Track warehouse stockpiles, minimum inventory alerts, timestamps, and perform demographic-proportional relief distribution",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
             text_color=Theme.TEXT_MUTED
         ).pack(anchor="w", pady=(1, 0))
@@ -52,7 +53,7 @@ class ResourceView(ctk.CTkFrame):
             border_color=Theme.BORDER_COLOR_LIGHT
         )
         container.grid(row=1, column=0, sticky="nsew", padx=(12, 6), pady=(0, 12))
-        container.grid_rowconfigure(3, weight=1)
+        container.grid_rowconfigure(4, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
@@ -146,6 +147,54 @@ class ResourceView(ctk.CTkFrame):
         )
         btn_add.grid(row=1, column=2, columnspan=2, padx=3, pady=(0, 4), sticky="ew")
 
+        # Filters Bar for Inventory
+        inv_filter = ctk.CTkFrame(container, fg_color="transparent")
+        inv_filter.grid(row=2, column=0, sticky="ew", padx=8, pady=(2, 4))
+        inv_filter.grid_columnconfigure(0, weight=1)
+
+        self.res_search = ctk.CTkEntry(
+            inv_filter,
+            placeholder_text="🔍 Search supply name...",
+            height=28,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small()
+        )
+        self.res_search.grid(row=0, column=0, padx=(0, 3), sticky="ew")
+        self.res_search.bind("<KeyRelease>", lambda e: self.refresh())
+
+        self.f_res_cat = ctk.CTkComboBox(
+            inv_filter,
+            values=["All Categories", "Food & Water", "Medical", "Shelter Kits", "Hygiene", "Rescue Gear"],
+            width=130,
+            height=28,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self.refresh()
+        )
+        self.f_res_cat.grid(row=0, column=1, padx=3)
+        self.f_res_cat.set("All Categories")
+
+        self.f_res_status = ctk.CTkComboBox(
+            inv_filter,
+            values=["All Stock", "Critical Stock", "Sufficient"],
+            width=120,
+            height=28,
+            corner_radius=6,
+            fg_color=Theme.BG_INPUT,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR,
+            font=Theme.font_small(),
+            command=lambda v: self.refresh()
+        )
+        self.f_res_status.grid(row=0, column=2, padx=3)
+        self.f_res_status.set("All Stock")
+
         # Table Header
         th = ctk.CTkFrame(
             container,
@@ -153,17 +202,18 @@ class ResourceView(ctk.CTkFrame):
             corner_radius=6,
             fg_color=Theme.BG_HEADER
         )
-        th.grid(row=2, column=0, sticky="ew", padx=8, pady=(2, 0))
-        th.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        th.grid(row=3, column=0, sticky="ew", padx=8, pady=(2, 0))
+        th.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
-        ctk.CTkLabel(th, text="SUPPLY ITEM", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=0, sticky="ew", padx=8, pady=4)
-        ctk.CTkLabel(th, text="CURRENT STOCK", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=1, sticky="ew", padx=8, pady=4)
-        ctk.CTkLabel(th, text="ALERT THRESHOLD", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=2, sticky="ew", padx=8, pady=4)
-        ctk.CTkLabel(th, text="HEALTH STATUS", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="center").grid(row=0, column=3, padx=8, pady=4)
+        ctk.CTkLabel(th, text="SUPPLY ITEM", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=0, sticky="ew", padx=6, pady=4)
+        ctk.CTkLabel(th, text="CURRENT STOCK", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=1, sticky="ew", padx=6, pady=4)
+        ctk.CTkLabel(th, text="ALERT MIN", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=2, sticky="ew", padx=6, pady=4)
+        ctk.CTkLabel(th, text="🕒 ADDED TIME", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=3, sticky="ew", padx=6, pady=4)
+        ctk.CTkLabel(th, text="STATUS", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="center").grid(row=0, column=4, padx=6, pady=4)
 
         self.inv_list = ctk.CTkScrollableFrame(container, fg_color="transparent")
-        self.inv_list.grid(row=3, column=0, sticky="nsew", padx=4, pady=3)
-        self.inv_list.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        self.inv_list.grid(row=4, column=0, sticky="nsew", padx=4, pady=3)
+        self.inv_list.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
     def _build_allocation_panel(self):
         alloc_card = ctk.CTkFrame(
@@ -224,7 +274,7 @@ class ResourceView(ctk.CTkFrame):
         # Dynamic area entries
         self.areas_frame = ctk.CTkScrollableFrame(
             alloc_card,
-            label_text="Affected Areas & Populations",
+            label_text="Affected Areas & Target Populations",
             height=110,
             fg_color=Theme.BG_CARD_ALT
         )
@@ -298,11 +348,11 @@ class ResourceView(ctk.CTkFrame):
             border_color=Theme.BORDER_COLOR,
             font=Theme.font_small()
         )
-        ent_a.grid(row=0, column=0, padx=(0, 3), sticky="ew")
+        ent_a.grid(row=0, column=0, padx=(0, 2), sticky="ew")
 
         ent_p = ctk.CTkEntry(
             row,
-            placeholder_text="Population",
+            placeholder_text="Population (e.g. 5000)",
             height=28,
             corner_radius=5,
             fg_color=Theme.BG_INPUT,
@@ -310,7 +360,7 @@ class ResourceView(ctk.CTkFrame):
             border_color=Theme.BORDER_COLOR,
             font=Theme.font_small()
         )
-        ent_p.grid(row=0, column=1, padx=(3, 0), sticky="ew")
+        ent_p.grid(row=0, column=1, padx=(2, 0), sticky="ew")
 
         self.area_rows.append((ent_a, ent_p))
 
@@ -322,7 +372,7 @@ class ResourceView(ctk.CTkFrame):
         min_str = self.ent_res_min.get().strip() or "0"
 
         if not name or not qty_str or not unit:
-            messagebox.showwarning("Validation Error", "Please provide name, quantity, and unit.")
+            messagebox.showwarning("Validation Error", "Please provide resource name, quantity, and unit.")
             return
 
         try:
@@ -331,14 +381,17 @@ class ResourceView(ctk.CTkFrame):
             if qty < 0 or min_stock < 0:
                 raise ValueError()
         except ValueError:
-            messagebox.showerror("Validation Error", "Quantity and minimum stock must be valid non-negative numbers.")
+            messagebox.showerror("Validation Error", "Quantity and Minimum Stock must be valid numbers.")
             return
 
         conn = get_connection()
         try:
-            conn.execute("INSERT INTO resources(name, category, quantity, unit, minimum_stock) VALUES (?, ?, ?, ?, ?)", (name, cat, qty, unit, min_stock))
+            conn.execute(
+                "INSERT INTO resources(name, category, quantity, unit, minimum_stock) VALUES (?, ?, ?, ?, ?)",
+                (name, cat, qty, unit, min_stock)
+            )
             conn.commit()
-            messagebox.showinfo("Success", f"Supply item '{name}' added to inventory.")
+            messagebox.showinfo("Success", f"Relief resource '{name}' added to inventory.")
             self.ent_res_name.delete(0, "end")
             self.ent_res_qty.delete(0, "end")
             self.ent_res_unit.delete(0, "end")
@@ -409,7 +462,7 @@ class ResourceView(ctk.CTkFrame):
             lines = [f"✅ Fair Allocation Plan for {amount} {res['unit']} of {res['name']}:"]
             for a, q in allocations.items():
                 pct = (area_populations[a] / sum(area_populations.values())) * 100
-                lines.append(f"• {a} (Pop: {area_populations[a]:,}, Share: {pct:.1f}%): {q} {res['unit']}")
+                lines.append(f"• 📍 {a} (Pop: {area_populations[a]:,}, Share: {pct:.1f}%): {q} {res['unit']}")
 
             self.lbl_alloc_summary.configure(text="\n".join(lines), text_color=Theme.SUCCESS)
             messagebox.showinfo("Allocation Executed", "Supplies proportionally distributed and inventory balance updated!")
@@ -436,17 +489,39 @@ class ResourceView(ctk.CTkFrame):
             self.cmb_alloc_res.configure(values=["No resources available"])
             self.cmb_alloc_res.set("No resources available")
 
-        if not rows:
+        # Filtering
+        q = self.res_search.get().strip().lower() if hasattr(self, 'res_search') else ""
+        cat_f = self.f_res_cat.get() if hasattr(self, 'f_res_cat') else "All Categories"
+        status_f = self.f_res_status.get() if hasattr(self, 'f_res_status') else "All Stock"
+
+        filtered = []
+        for r in rows:
+            is_critical = (r["quantity"] <= r["minimum_stock"])
+            if cat_f != "All Categories" and r["category"].upper() != cat_f.upper():
+                continue
+            if status_f == "Critical Stock" and not is_critical:
+                continue
+            if status_f == "Sufficient" and is_critical:
+                continue
+            if q:
+                n = str(r["name"] or "").lower()
+                c = str(r["category"] or "").lower()
+                if q not in n and q not in c:
+                    continue
+            filtered.append(r)
+
+        if not filtered:
+            msg = "No supplies match your filter criteria." if rows else "No supply items in inventory."
             lbl = ctk.CTkLabel(
                 self.inv_list,
-                text="No supply items in inventory.",
+                text=msg,
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MUTED
             )
             lbl.pack(pady=16)
             return
 
-        for idx, r in enumerate(rows):
+        for idx, r in enumerate(filtered):
             is_critical = (r["quantity"] <= r["minimum_stock"])
             row_frame = ctk.CTkFrame(
                 self.inv_list,
@@ -456,7 +531,7 @@ class ResourceView(ctk.CTkFrame):
                 border_color=Theme.BORDER_COLOR_LIGHT
             )
             row_frame.pack(fill="x", padx=2, pady=2)
-            row_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
+            row_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
             # Name & Category
             lbl_name = ctk.CTkLabel(
@@ -489,6 +564,17 @@ class ResourceView(ctk.CTkFrame):
             )
             lbl_min.grid(row=0, column=2, sticky="ew", padx=6, pady=4)
 
+            # Added Time
+            time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
+            lbl_time = ctk.CTkLabel(
+                row_frame,
+                text=f"🕒 {time_str}",
+                font=Theme.font_small(),
+                text_color=Theme.TEXT_MUTED,
+                anchor="w"
+            )
+            lbl_time.grid(row=0, column=3, sticky="ew", padx=6, pady=4)
+
             # Badge
             badge_bg = Theme.DANGER if is_critical else Theme.SUCCESS
             badge_txt = " CRITICAL " if is_critical else " SUFFICIENT "
@@ -499,4 +585,4 @@ class ResourceView(ctk.CTkFrame):
                 text_color="white",
                 corner_radius=6,
                 font=Theme.font_badge()
-            ).grid(row=0, column=3, padx=4, pady=4)
+            ).grid(row=0, column=4, padx=4, pady=4)

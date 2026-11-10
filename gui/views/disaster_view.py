@@ -31,7 +31,7 @@ class DisasterView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="🌪️ Disaster Incident Command & Tracking",
+            text="Disaster Incident Command & Tracking",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w")
@@ -56,7 +56,7 @@ class DisasterView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             form_card,
-            text="➕ Register New Disaster / Incident",
+            text="Register New Disaster / Incident",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).grid(row=0, column=0, columnspan=4, sticky="w", padx=12, pady=(8, 4))
@@ -127,7 +127,7 @@ class DisasterView(ctk.CTkFrame):
 
         btn_add = ctk.CTkButton(
             form_card,
-            text="Enlist Disaster Event  ➔",
+            text="Enlist Disaster Event",
             height=32,
             corner_radius=6,
             fg_color=Theme.PRIMARY,
@@ -156,7 +156,7 @@ class DisasterView(ctk.CTkFrame):
 
         self.search_entry = ctk.CTkEntry(
             filter_bar,
-            placeholder_text="🔍 Search disaster by name or affected area...",
+            placeholder_text="Search disaster by name or affected area...",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -222,7 +222,7 @@ class DisasterView(ctk.CTkFrame):
         th.grid(row=1, column=0, sticky="ew", padx=8, pady=(4, 2))
         th.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-        cols = ["INCIDENT & TYPE", "📍 AFFECTED AREA", "SEVERITY", "POPULATION", "🕒 REPORTED TIME", "STATUS & ACTION"]
+        cols = ["INCIDENT & TYPE", "AFFECTED AREA", "SEVERITY", "POPULATION", "REPORTED TIME", "STATUS & ACTION"]
         for idx, col in enumerate(cols):
             ctk.CTkLabel(
                 th,
@@ -348,7 +348,7 @@ class DisasterView(ctk.CTkFrame):
             # Col 1: Area
             ctk.CTkLabel(
                 row_frame,
-                text=f"📍 {r['area']}",
+                text=str(r['area']),
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MAIN,
                 anchor="w"
@@ -368,7 +368,7 @@ class DisasterView(ctk.CTkFrame):
             # Col 3: Affected Population
             ctk.CTkLabel(
                 row_frame,
-                text=f"👥 {r['affected_people']:,}",
+                text=f"{r['affected_people']:,}",
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MAIN,
                 anchor="w"
@@ -378,7 +378,7 @@ class DisasterView(ctk.CTkFrame):
             time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
             ctk.CTkLabel(
                 row_frame,
-                text=f"🕒 {time_str}",
+                text=str(time_str),
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MUTED,
                 anchor="w"

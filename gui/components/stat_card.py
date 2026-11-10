@@ -1,9 +1,27 @@
 import customtkinter as ctk
 from gui.theme import Theme
+from gui.icons import get_icon
+
+EMOJI_TO_ICON = {
+    "📊": "reports",
+    "🌪️": "disaster",
+    "👥": "users",
+    "🚨": "emergency",
+    "⏳": "clock",
+    "🏕️": "shelter",
+    "🚑": "rescue",
+    "🤝": "volunteer",
+    "✅": "check",
+    "📦": "resource",
+    "🧭": "routes",
+    "📈": "reports",
+    "⚡": "disaster",
+    "🔒": "lock",
+}
 
 class StatCard(ctk.CTkFrame):
     """
-    Standard Compact SaaS/Enterprise KPI Card.
+    Standard Compact SaaS/Enterprise KPI Card with Single-Color Vector Icons.
     Layout:
     ┌──────────────────────────────────────────────┐
     │ LABEL / TITLE (muted uppercase)      [ ICON ]│
@@ -11,7 +29,7 @@ class StatCard(ctk.CTkFrame):
     │ ↳ subtitle/trend (optional)                  │
     └──────────────────────────────────────────────┘
     """
-    def __init__(self, master, title, value, subtitle="", icon="📊", accent_color="#4F46E5", **kwargs):
+    def __init__(self, master, title, value, subtitle="", icon="reports", accent_color="#4F46E5", **kwargs):
         super().__init__(
             master,
             corner_radius=10,
@@ -52,10 +70,17 @@ class StatCard(ctk.CTkFrame):
         self.icon_badge.grid(row=0, column=1, sticky="e")
         self.icon_badge.grid_propagate(False)
 
+        # Resolve single-color vector icon
+        if isinstance(icon, ctk.CTkImage):
+            ctk_icon = icon
+        else:
+            icon_key = EMOJI_TO_ICON.get(str(icon).strip(), str(icon).strip())
+            ctk_icon = get_icon(icon_key, color=accent_color, size=15)
+
         self.icon_label = ctk.CTkLabel(
             self.icon_badge,
-            text=icon,
-            font=ctk.CTkFont(size=14)
+            image=ctk_icon,
+            text=""
         )
         self.icon_label.place(relx=0.5, rely=0.5, anchor="center")
 

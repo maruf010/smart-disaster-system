@@ -60,7 +60,7 @@ class DashboardView(ctk.CTkScrollableFrame):
 
         refresh_btn = ctk.CTkButton(
             right_box,
-            text="🔄 Refresh",
+            text="Refresh",
             width=85,
             height=28,
             corner_radius=6,
@@ -77,28 +77,28 @@ class DashboardView(ctk.CTkScrollableFrame):
         cards_frame.pack(fill="x", padx=8, pady=2)
         cards_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
-        self.card_active = StatCard(cards_frame, title="Active Disasters", value="0", icon="🌪️", accent_color=Theme.DANGER)
+        self.card_active = StatCard(cards_frame, title="Active Disasters", value="0", icon="disaster", accent_color=Theme.DANGER)
         self.card_active.grid(row=0, column=0, sticky="ew", padx=4, pady=3)
 
-        self.card_affected = StatCard(cards_frame, title="People Affected", value="0", icon="👥", accent_color=Theme.WARNING)
+        self.card_affected = StatCard(cards_frame, title="People Affected", value="0", icon="users", accent_color=Theme.WARNING)
         self.card_affected.grid(row=0, column=1, sticky="ew", padx=4, pady=3)
 
-        self.card_critical = StatCard(cards_frame, title="Critical Requests", value="0", icon="🚨", accent_color=Theme.DANGER)
+        self.card_critical = StatCard(cards_frame, title="Critical Requests", value="0", icon="emergency", accent_color=Theme.DANGER)
         self.card_critical.grid(row=0, column=2, sticky="ew", padx=4, pady=3)
 
-        self.card_pending = StatCard(cards_frame, title="Pending Triage", value="0", icon="⏳", accent_color=Theme.PURPLE)
+        self.card_pending = StatCard(cards_frame, title="Pending Triage", value="0", icon="clock", accent_color=Theme.PURPLE)
         self.card_pending.grid(row=0, column=3, sticky="ew", padx=4, pady=3)
 
-        self.card_shelters = StatCard(cards_frame, title="Shelter Capacity", value="0 / 0", icon="🏕️", accent_color=Theme.SUCCESS)
+        self.card_shelters = StatCard(cards_frame, title="Shelter Capacity", value="0 / 0", icon="shelter", accent_color=Theme.SUCCESS)
         self.card_shelters.grid(row=1, column=0, sticky="ew", padx=4, pady=3)
 
-        self.card_rescue = StatCard(cards_frame, title="Available Squads", value="0", icon="🚑", accent_color=Theme.INFO)
+        self.card_rescue = StatCard(cards_frame, title="Available Squads", value="0", icon="rescue", accent_color=Theme.INFO)
         self.card_rescue.grid(row=1, column=1, sticky="ew", padx=4, pady=3)
 
-        self.card_volunteers = StatCard(cards_frame, title="Ready Volunteers", value="0", icon="🤝", accent_color=Theme.TEAL)
+        self.card_volunteers = StatCard(cards_frame, title="Ready Volunteers", value="0", icon="volunteer", accent_color=Theme.TEAL)
         self.card_volunteers.grid(row=1, column=2, sticky="ew", padx=4, pady=3)
 
-        self.card_resolved = StatCard(cards_frame, title="Resolved Incidents", value="0", icon="✅", accent_color=Theme.SUCCESS)
+        self.card_resolved = StatCard(cards_frame, title="Resolved Incidents", value="0", icon="check", accent_color=Theme.SUCCESS)
         self.card_resolved.grid(row=1, column=3, sticky="ew", padx=4, pady=3)
 
     def _build_action_and_occupancy_strip(self):
@@ -122,7 +122,7 @@ class DashboardView(ctk.CTkScrollableFrame):
 
         ctk.CTkLabel(
             sh_head,
-            text="🏕️ Shelter Utilization Overview",
+            text="Shelter Utilization Overview",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).pack(side="left")
@@ -160,14 +160,14 @@ class DashboardView(ctk.CTkScrollableFrame):
 
         ctk.CTkLabel(
             actions_card,
-            text="⚡ Emergency Response Quick Actions",
+            text="Emergency Response Quick Actions",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).grid(row=0, column=0, columnspan=3, sticky="w", padx=12, pady=(8, 6))
 
         btn_new_em = ctk.CTkButton(
             actions_card,
-            text="🚨 Log Emergency",
+            text="Log Emergency",
             height=30,
             corner_radius=6,
             fg_color=Theme.DANGER,
@@ -179,7 +179,7 @@ class DashboardView(ctk.CTkScrollableFrame):
 
         btn_new_dis = ctk.CTkButton(
             actions_card,
-            text="🌪️ Add Disaster",
+            text="Add Disaster",
             height=30,
             corner_radius=6,
             fg_color=Theme.PRIMARY,
@@ -191,7 +191,7 @@ class DashboardView(ctk.CTkScrollableFrame):
 
         btn_route = ctk.CTkButton(
             actions_card,
-            text="🧭 Dijkstra Route",
+            text="Route Solver",
             height=30,
             corner_radius=6,
             fg_color=Theme.SUCCESS,
@@ -217,7 +217,7 @@ class DashboardView(ctk.CTkScrollableFrame):
 
         ctk.CTkLabel(
             sec_head,
-            text="🚨 Critical & High Priority Emergency Queue",
+            text="Critical & High Priority Emergency Queue",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).pack(side="left")
@@ -284,7 +284,7 @@ class DashboardView(ctk.CTkScrollableFrame):
             if not high_requests:
                 lbl = ctk.CTkLabel(
                     self.alerts_list,
-                    text="🎉 No active high-priority emergencies reported in the field.",
+                    text="No active high-priority emergencies reported in the field.",
                     font=Theme.font_body(),
                     text_color=Theme.TEXT_MUTED
                 )
@@ -322,7 +322,7 @@ class DashboardView(ctk.CTkScrollableFrame):
                     time_str = format_datetime(req["created_at"]) if "created_at" in req.keys() else "N/A"
                     ctk.CTkLabel(
                         row_box,
-                        text=f"{req['emergency_type']}  •  📍 {req['location']} ({req['requester_name'] or 'N/A'})  •  🕒 {time_str}",
+                        text=f"{req['emergency_type']}  •  {req['location']} ({req['requester_name'] or 'N/A'})  •  {time_str}",
                         font=Theme.font_small(),
                         text_color=Theme.TEXT_MAIN,
                         anchor="w"

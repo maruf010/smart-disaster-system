@@ -3,6 +3,7 @@ from tkinter import messagebox
 from database import get_connection
 from algorithms.risk_score import calculate_risk
 from gui.theme import Theme
+from gui.icons import get_icon
 
 class CitizenPortal(ctk.CTk):
     def __init__(self, user, on_logout=None):
@@ -50,9 +51,12 @@ class CitizenPortal(ctk.CTk):
         left.grid(row=0, column=0, sticky="w", padx=14, pady=8)
 
         greeting_name = self.user.get("full_name") or self.user.get("username", "Citizen")
+        brand_icon = get_icon("shield", color=Theme.PRIMARY, size=22)
         ctk.CTkLabel(
             left,
-            text=f"🛡️ SDERMS  •  Citizen Emergency Portal",
+            image=brand_icon,
+            compound="left",
+            text="  SDERMS  •  Citizen Emergency Portal",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w")
@@ -69,7 +73,7 @@ class CitizenPortal(ctk.CTk):
 
         ctk.CTkLabel(
             right,
-            text=" 🟢 CITIZEN ACCOUNT ",
+            text=" ● CITIZEN ACCOUNT ",
             fg_color=Theme.SUCCESS_BG,
             text_color=Theme.SUCCESS,
             corner_radius=8,
@@ -117,10 +121,10 @@ class CitizenPortal(ctk.CTk):
         banner.pack(fill="x", padx=14, pady=(0, 6))
 
         if active:
-            txt = f"⚠️ ACTIVE FIELD ADVISORY: {active['name']} ({active['type']}) reported in {active['area']} with {active['severity']} severity! Stay in safe shelters."
+            txt = f"FIELD ADVISORY: {active['name']} ({active['type']}) reported in {active['area']} with {active['severity']} severity! Stay in safe shelters."
             txt_color = Theme.DANGER
         else:
-            txt = "ℹ️ No major active disaster alerts reported right now. System operational for emergency assistance."
+            txt = "STATUS: No major active disaster alerts reported right now. System operational for emergency assistance."
             txt_color = Theme.PRIMARY
 
         ctk.CTkLabel(
@@ -142,10 +146,10 @@ class CitizenPortal(ctk.CTk):
         )
         self.tabview.pack(fill="both", expand=True, padx=14, pady=(0, 12))
 
-        self.tab_sos = self.tabview.add("  🚨 Send Emergency SOS  ")
-        self.tab_track = self.tabview.add("  📍 Track My Requests  ")
-        self.tab_shelters = self.tabview.add("  🏕️ Find Safe Shelters  ")
-        self.tab_volunteer = self.tabview.add("  🤝 Join as Volunteer  ")
+        self.tab_sos = self.tabview.add("Send Emergency SOS")
+        self.tab_track = self.tabview.add("Track My Requests")
+        self.tab_shelters = self.tabview.add("Find Safe Shelters")
+        self.tab_volunteer = self.tabview.add("Join as Volunteer")
 
         self._build_sos_tab()
         self._build_track_tab()
@@ -240,7 +244,7 @@ class CitizenPortal(ctk.CTk):
         info_box.pack(fill="x", pady=(0, 10))
         ctk.CTkLabel(
             info_box,
-            text="📞 If phone networks are down, your request remains queued locally.\n📍 Keep your mobile phone charged and remain in a high, visible spot.",
+            text="• If phone networks are down, your request remains queued locally.\n• Keep your mobile phone charged and remain in a high, visible spot.",
             font=Theme.font_small(),
             text_color=Theme.TEXT_MUTED,
             justify="left"
@@ -249,7 +253,7 @@ class CitizenPortal(ctk.CTk):
         # Big Submit Button
         btn_sos = ctk.CTkButton(
             right_panel,
-            text="🚨 SEND EMERGENCY SOS NOW",
+            text="SEND EMERGENCY SOS NOW",
             height=44,
             corner_radius=10,
             fg_color=Theme.DANGER,
@@ -323,7 +327,7 @@ class CitizenPortal(ctk.CTk):
 
             messagebox.showinfo(
                 "SOS Sent Successfully",
-                f"🚨 Emergency Request Dispatched!\n\nYour Ticket ID: ER-{req_id:04d}\nAssigned Priority: {level} (Score: {score}/100)\n\nControl Room has received your alert. Check 'Track My Requests' tab for real-time updates."
+                f"Emergency Request Dispatched!\n\nYour Ticket ID: ER-{req_id:04d}\nAssigned Priority: {level} (Score: {score}/100)\n\nControl Room has received your alert. Check 'Track My Requests' tab for real-time updates."
             )
             self.sos_loc.delete(0, "end")
             self.sos_affected.delete(0, "end")
@@ -333,7 +337,7 @@ class CitizenPortal(ctk.CTk):
             self.sos_shortage.deselect()
             self._update_sos_score()
             self._refresh_track_list()
-            self.tabview.set("  📍 Track My Requests  ")
+            self.tabview.set("Track My Requests")
         finally:
             conn.close()
 
@@ -350,7 +354,7 @@ class CitizenPortal(ctk.CTk):
         ctk.CTkLabel(head, text="My Emergency Request Status & Resolution Tracker", font=Theme.font_sub(), text_color=Theme.TEXT_MAIN).grid(row=0, column=0, sticky="w")
         ctk.CTkLabel(head, text="Monitor your dispatch tickets in real-time with posted timestamps, location, and rescue updates", font=Theme.font_small(), text_color=Theme.TEXT_MUTED).grid(row=1, column=0, sticky="w")
 
-        btn_ref = ctk.CTkButton(head, text="🔄 Refresh Status", width=100, height=28, corner_radius=6, fg_color=Theme.PRIMARY_LIGHT, text_color=Theme.PRIMARY, hover_color=Theme.BORDER_COLOR, font=Theme.font_small(), command=self._refresh_track_list)
+        btn_ref = ctk.CTkButton(head, text="Refresh Status", width=100, height=28, corner_radius=6, fg_color=Theme.PRIMARY_LIGHT, text_color=Theme.PRIMARY, hover_color=Theme.BORDER_COLOR, font=Theme.font_small(), command=self._refresh_track_list)
         btn_ref.grid(row=0, column=1, rowspan=2, sticky="e")
 
         # Search & Filter bar
@@ -360,7 +364,7 @@ class CitizenPortal(ctk.CTk):
 
         self.track_search = ctk.CTkEntry(
             filter_bar,
-            placeholder_text="🔍 Search by incident type, landmark or location...",
+            placeholder_text="Search by incident type, landmark or location...",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -469,13 +473,13 @@ class CitizenPortal(ctk.CTk):
             info.grid(row=0, column=1, sticky="w", padx=4, pady=(8, 2))
 
             time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
-            ctk.CTkLabel(info, text=f"{r['emergency_type']}  •  📍 {r['location']}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
-            ctk.CTkLabel(info, text=f"🕒 Posted: {time_str}  |  👥 Casualties: {r['people_affected']} (Injured: {r['injured']})  |  Risk Rating: {r['priority_score']}/100", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w", pady=(1, 0))
+            ctk.CTkLabel(info, text=f"{r['emergency_type']}  •  {r['location']}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
+            ctk.CTkLabel(info, text=f"Posted: {time_str}  |  Casualties: {r['people_affected']} (Injured: {r['injured']})  |  Risk Rating: {r['priority_score']}/100", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w", pady=(1, 0))
 
             # Status pill on right
             is_res = (r["status"] == "RESOLVED")
             st_color = Theme.SUCCESS if is_res else Theme.WARNING
-            st_text = "✅ RESCUE ASSISTED / SAFE" if is_res else "⏳ DISPATCH IN PROGRESS"
+            st_text = "● RESCUE ASSISTED / SAFE" if is_res else "● DISPATCH IN PROGRESS"
 
             st_lbl = ctk.CTkLabel(card, text=f" {st_text} ", fg_color=(Theme.SUCCESS_BG if is_res else Theme.WARNING_BG), text_color=st_color, corner_radius=8, font=Theme.font_badge())
             st_lbl.grid(row=0, column=2, padx=12, pady=10)
@@ -493,7 +497,7 @@ class CitizenPortal(ctk.CTk):
         ctk.CTkLabel(head, text="Nearby Safe Evacuation Shelters", font=Theme.font_sub(), text_color=Theme.TEXT_MAIN).grid(row=0, column=0, sticky="w")
         ctk.CTkLabel(head, text="Public shelter facilities with verified bed capacity, location, and safety status", font=Theme.font_small(), text_color=Theme.TEXT_MUTED).grid(row=1, column=0, sticky="w")
 
-        btn_ref = ctk.CTkButton(head, text="🔄 Refresh Shelters", width=110, height=28, corner_radius=6, fg_color=Theme.PRIMARY_LIGHT, text_color=Theme.PRIMARY, hover_color=Theme.BORDER_COLOR, font=Theme.font_small(), command=self._refresh_shelters_list)
+        btn_ref = ctk.CTkButton(head, text="Refresh Shelters", width=110, height=28, corner_radius=6, fg_color=Theme.PRIMARY_LIGHT, text_color=Theme.PRIMARY, hover_color=Theme.BORDER_COLOR, font=Theme.font_small(), command=self._refresh_shelters_list)
         btn_ref.grid(row=0, column=1, rowspan=2, sticky="e")
 
         # Search & Filter bar
@@ -503,7 +507,7 @@ class CitizenPortal(ctk.CTk):
 
         self.sh_search = ctk.CTkEntry(
             sh_filter_bar,
-            placeholder_text="🔍 Search shelter by name or location...",
+            placeholder_text="Search shelter by name or location...",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -584,15 +588,16 @@ class CitizenPortal(ctk.CTk):
             card.grid_columnconfigure(1, weight=1)
 
             # Icon
-            ctk.CTkLabel(card, text="🏕️", font=ctk.CTkFont(size=24)).grid(row=0, column=0, rowspan=2, padx=12, pady=10)
+            sh_icon = get_icon("shelter", color=Theme.PRIMARY, size=24)
+            ctk.CTkLabel(card, image=sh_icon, text="").grid(row=0, column=0, rowspan=2, padx=12, pady=10)
 
             # Info
             info = ctk.CTkFrame(card, fg_color="transparent")
             info.grid(row=0, column=1, sticky="w", padx=4, pady=8)
 
             time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
-            ctk.CTkLabel(info, text=f"{r['name']}  •  📍 {r['location']}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
-            ctk.CTkLabel(info, text=f"Available Beds: {avail:,} of {cap:,} capacity  |  🕒 Added: {time_str}", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w", pady=(1, 0))
+            ctk.CTkLabel(info, text=f"{r['name']}  •  {r['location']}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
+            ctk.CTkLabel(info, text=f"Available Beds: {avail:,} of {cap:,} capacity  |  Added: {time_str}", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w", pady=(1, 0))
 
             # Progress bar
             pbar = ctk.CTkProgressBar(card, width=140, height=8, corner_radius=4)
@@ -644,7 +649,7 @@ class CitizenPortal(ctk.CTk):
 
         btn_vol = ctk.CTkButton(
             card,
-            text="Enlist as Ready Volunteer  ➔",
+            text="Enlist as Ready Volunteer",
             height=36,
             corner_radius=8,
             fg_color=Theme.SUCCESS,

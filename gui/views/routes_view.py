@@ -31,7 +31,7 @@ class RoutesView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="🧭 Dijkstra Shortest Route Solver & Road Blockade Control",
+            text="Dijkstra Shortest Route Solver & Road Blockade Control",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w")
@@ -153,7 +153,7 @@ class RoutesView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             panel,
-            text="🧭 Dijkstra Shortest Route Solver",
+            text="Dijkstra Shortest Route Solver",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w", padx=12, pady=(8, 2))
@@ -207,7 +207,7 @@ class RoutesView(ctk.CTkFrame):
 
         btn_solve = ctk.CTkButton(
             panel,
-            text="🚀 Calculate Shortest Route",
+            text="Calculate Shortest Route",
             height=32,
             corner_radius=6,
             fg_color=Theme.SUCCESS,
@@ -230,7 +230,7 @@ class RoutesView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             self.res_card,
-            text="📍 OPTIMAL ROUTE SUMMARY",
+            text="OPTIMAL ROUTE SUMMARY",
             font=Theme.font_badge(),
             text_color=Theme.TEXT_MUTED
         ).pack(anchor="w", padx=10, pady=(8, 4))
@@ -316,17 +316,17 @@ class RoutesView(ctk.CTkFrame):
 
         if cost is None:
             self.lbl_path_visual.configure(
-                text=f"❌ No passable route exists between Node {start} and Node {end}!\n(Roads might be BLOCKED)",
+                text=f"No passable route exists between Node {start} and Node {end}!\n(Roads might be BLOCKED)",
                 text_color=Theme.DANGER
             )
             self.lbl_distance.configure(text="Status: Unreachable")
         else:
-            visual_chain = "  ➔  ".join([f"[{n}]" for n in path])
+            visual_chain = "  ->  ".join([f"[{n}]" for n in path])
             self.lbl_path_visual.configure(
                 text=f"Optimal Navigation Chain:\n\n{visual_chain}",
                 text_color=Theme.SUCCESS
             )
-            self.lbl_distance.configure(text=f"🎯 Shortest Distance: {cost:g} KM")
+            self.lbl_distance.configure(text=f"Shortest Distance: {cost:g} KM")
 
     def refresh(self):
         for w in self.road_list.winfo_children():

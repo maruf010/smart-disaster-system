@@ -33,7 +33,7 @@ class ReportsView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="📈 Audit Intelligence & Emergency CSV Reports",
+            text="Audit Intelligence & Emergency CSV Reports",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w")
@@ -61,7 +61,7 @@ class ReportsView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="📥 Comprehensive Emergency Triage Spreadsheet (.CSV)",
+            text="Comprehensive Emergency Triage Spreadsheet (.CSV)",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w")
@@ -75,7 +75,7 @@ class ReportsView(ctk.CTkFrame):
 
         btn_export = ctk.CTkButton(
             card,
-            text="Export CSV Spreadsheet  ➔",
+            text="Export CSV Spreadsheet",
             height=32,
             corner_radius=6,
             fg_color=Theme.PRIMARY,
@@ -104,7 +104,7 @@ class ReportsView(ctk.CTkFrame):
 
         self.rep_search = ctk.CTkEntry(
             filter_bar,
-            placeholder_text="🔍 Search audit log by caller, location or emergency type...",
+            placeholder_text="Search audit log by caller, location or emergency type...",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -155,7 +155,7 @@ class ReportsView(ctk.CTkFrame):
         th.grid(row=1, column=0, sticky="ew", padx=8, pady=(4, 2))
         th.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
 
-        cols = ["INCIDENT ID", "CALLER / CONTACT", "📍 LOCATION", "EMERGENCY TYPE", "PRIORITY RATING", "🕒 LOGGED TIME", "AUDIT STATUS"]
+        cols = ["INCIDENT ID", "CALLER / CONTACT", "LOCATION", "EMERGENCY TYPE", "PRIORITY RATING", "LOGGED TIME", "AUDIT STATUS"]
         for idx, col in enumerate(cols):
             ctk.CTkLabel(
                 th,
@@ -274,7 +274,7 @@ class ReportsView(ctk.CTkFrame):
             ctk.CTkLabel(row_frame, text=r["requester_name"] or "Anonymous", font=Theme.font_small(), text_color=Theme.TEXT_MAIN, anchor="w").grid(row=0, column=1, sticky="ew", padx=6, pady=6)
             
             # Location
-            ctk.CTkLabel(row_frame, text=f"📍 {r['location']}", font=Theme.font_small(), text_color=Theme.TEXT_MAIN, anchor="w").grid(row=0, column=2, sticky="ew", padx=6, pady=6)
+            ctk.CTkLabel(row_frame, text=str(r['location']), font=Theme.font_small(), text_color=Theme.TEXT_MAIN, anchor="w").grid(row=0, column=2, sticky="ew", padx=6, pady=6)
             
             # Type
             ctk.CTkLabel(row_frame, text=r["emergency_type"], font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=3, sticky="ew", padx=6, pady=6)
@@ -294,7 +294,7 @@ class ReportsView(ctk.CTkFrame):
             time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
             ctk.CTkLabel(
                 row_frame,
-                text=f"🕒 {time_str}",
+                text=str(time_str),
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MUTED,
                 anchor="w"
@@ -303,7 +303,7 @@ class ReportsView(ctk.CTkFrame):
             # Status
             is_res = (r["status"] == "RESOLVED")
             st_color = Theme.SUCCESS if is_res else Theme.WARNING
-            st_icon = "✅ Resolved" if is_res else "⏳ Pending"
+            st_icon = "● Resolved" if is_res else "● Pending"
             ctk.CTkLabel(
                 row_frame,
                 text=st_icon,

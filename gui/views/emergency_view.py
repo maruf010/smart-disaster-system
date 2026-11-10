@@ -33,7 +33,7 @@ class EmergencyView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="🚨 Emergency Incident Triage & Automated Prioritization",
+            text="Emergency Incident Triage & Automated Prioritization",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w")
@@ -212,7 +212,7 @@ class EmergencyView(ctk.CTkFrame):
         # Dispatch Button
         btn_submit = ctk.CTkButton(
             card,
-            text="🚨 Dispatch SOS Emergency Request",
+            text="Dispatch SOS Emergency Request",
             height=34,
             corner_radius=6,
             fg_color=Theme.DANGER,
@@ -241,7 +241,7 @@ class EmergencyView(ctk.CTkFrame):
 
         self.queue_search = ctk.CTkEntry(
             filter_bar,
-            placeholder_text="🔍 Search caller, location or emergency type...",
+            placeholder_text="Search caller, location or emergency type...",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -292,7 +292,7 @@ class EmergencyView(ctk.CTkFrame):
         th.grid(row=1, column=0, sticky="ew", padx=8, pady=(4, 2))
         th.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-        cols = ["INCIDENT & TYPE", "📍 LOCATION & CALLER", "👥 CASUALTIES", "🕒 LOGGED TIME", "RISK & PRIO", "ACTION"]
+        cols = ["INCIDENT & TYPE", "LOCATION & CALLER", "CASUALTIES", "LOGGED TIME", "RISK & PRIO", "ACTION"]
         for i, title in enumerate(cols):
             ctk.CTkLabel(
                 th,
@@ -464,14 +464,14 @@ class EmergencyView(ctk.CTkFrame):
             # Col 1: Location & Caller
             box1 = ctk.CTkFrame(row_frame, fg_color="transparent")
             box1.grid(row=0, column=1, sticky="ew", padx=6, pady=4)
-            ctk.CTkLabel(box1, text=f"📍 {r['location']}", font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
+            ctk.CTkLabel(box1, text=str(r['location']), font=Theme.font_body_bold(), text_color=Theme.TEXT_MAIN, anchor="w").pack(anchor="w")
             caller_name = r['requester_name'] if r['requester_name'] else "Anonymous Caller"
             ctk.CTkLabel(box1, text=f"Caller: {caller_name}", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").pack(anchor="w")
 
             # Col 2: Casualties
             ctk.CTkLabel(
                 row_frame,
-                text=f"👥 {r['people_affected']} (🩹 {r['injured']})",
+                text=f"{r['people_affected']} (Injured: {r['injured']})",
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MAIN,
                 anchor="w"
@@ -481,7 +481,7 @@ class EmergencyView(ctk.CTkFrame):
             time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
             ctk.CTkLabel(
                 row_frame,
-                text=f"🕒 {time_str}",
+                text=str(time_str),
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MUTED,
                 anchor="w"
@@ -518,7 +518,7 @@ class EmergencyView(ctk.CTkFrame):
             else:
                 ctk.CTkLabel(
                     row_frame,
-                    text="✅ Resolved",
+                    text="● Resolved",
                     font=Theme.font_small(),
                     text_color=Theme.SUCCESS
                 ).grid(row=0, column=5, padx=6, pady=4)

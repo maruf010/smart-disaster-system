@@ -2,6 +2,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 from database import get_connection
 from gui.theme import Theme
+from gui.icons import get_icon
 
 class LoginWindow(ctk.CTk):
     def __init__(self, on_login_success):
@@ -36,6 +37,13 @@ class LoginWindow(ctk.CTk):
         self.geometry(f"{width}x{height}+{x}+{y}")
 
     def _build_ui(self):
+        # Prepare single-color icons
+        self.brand_icon = get_icon("shield", color=Theme.PRIMARY, size=28)
+        self.cit_icon_active = get_icon("users", color="#FFFFFF", size=16)
+        self.cit_icon_inactive = get_icon("users", color=("#475569", "#94A3B8"), size=16)
+        self.adm_icon_active = get_icon("lock", color="#FFFFFF", size=16)
+        self.adm_icon_inactive = get_icon("lock", color=("#475569", "#94A3B8"), size=16)
+
         # Outer Card with subtle elevated border
         self.card = ctk.CTkFrame(
             self,
@@ -60,7 +68,7 @@ class LoginWindow(ctk.CTk):
         icon_box.pack(pady=(16, 4))
         icon_box.grid_propagate(False)
 
-        icon_lbl = ctk.CTkLabel(icon_box, text="🛡️", font=ctk.CTkFont(size=24))
+        icon_lbl = ctk.CTkLabel(icon_box, image=self.brand_icon, text="")
         icon_lbl.place(relx=0.5, rely=0.5, anchor="center")
 
         title = ctk.CTkLabel(
@@ -92,7 +100,9 @@ class LoginWindow(ctk.CTk):
 
         self.btn_citizen_tab = ctk.CTkButton(
             self.switcher_frame,
-            text="👥 Citizen Login",
+            text="  Citizen Portal",
+            image=self.cit_icon_active,
+            compound="left",
             height=34,
             corner_radius=6,
             font=Theme.font_body_bold(),
@@ -102,7 +112,9 @@ class LoginWindow(ctk.CTk):
 
         self.btn_admin_tab = ctk.CTkButton(
             self.switcher_frame,
-            text="🔒 Admin Login",
+            text="  Admin Console",
+            image=self.adm_icon_inactive,
+            compound="left",
             height=34,
             corner_radius=6,
             font=Theme.font_body_bold(),
@@ -124,11 +136,13 @@ class LoginWindow(ctk.CTk):
             self.btn_citizen_tab.configure(
                 fg_color=Theme.PRIMARY,
                 text_color="white",
+                image=self.cit_icon_active,
                 hover_color=Theme.PRIMARY_HOVER
             )
             self.btn_admin_tab.configure(
                 fg_color="transparent",
                 text_color=Theme.TEXT_MUTED,
+                image=self.adm_icon_inactive,
                 hover_color=Theme.PRIMARY_LIGHT
             )
 
@@ -141,11 +155,13 @@ class LoginWindow(ctk.CTk):
             self.btn_citizen_tab.configure(
                 fg_color="transparent",
                 text_color=Theme.TEXT_MUTED,
+                image=self.cit_icon_inactive,
                 hover_color=Theme.PRIMARY_LIGHT
             )
             self.btn_admin_tab.configure(
                 fg_color=Theme.PRIMARY,
                 text_color="white",
+                image=self.adm_icon_active,
                 hover_color=Theme.PRIMARY_HOVER
             )
             self._render_admin_login()
@@ -165,7 +181,7 @@ class LoginWindow(ctk.CTk):
 
         ctk.CTkLabel(
             badge_row,
-            text=" 🟢 CITIZEN ",
+            text=" ● CITIZEN ",
             fg_color=Theme.SUCCESS_BG,
             text_color=Theme.SUCCESS,
             corner_radius=6,
@@ -214,7 +230,7 @@ class LoginWindow(ctk.CTk):
         # Sign In Button
         btn_cit_login = ctk.CTkButton(
             self.content_container,
-            text="Sign In to Citizen Portal  ➔",
+            text="Sign In to Citizen Portal",
             height=38,
             corner_radius=8,
             fg_color=Theme.SUCCESS,
@@ -239,7 +255,7 @@ class LoginWindow(ctk.CTk):
         # Register Button
         btn_create = ctk.CTkButton(
             self.content_container,
-            text="➕ Create New Citizen Account",
+            text="Create New Citizen Account",
             height=34,
             corner_radius=8,
             fg_color=Theme.PRIMARY_LIGHT,
@@ -264,7 +280,7 @@ class LoginWindow(ctk.CTk):
 
         btn_back = ctk.CTkButton(
             head,
-            text="← Back to Sign In",
+            text="Back to Sign In",
             width=90,
             height=22,
             corner_radius=5,
@@ -299,7 +315,7 @@ class LoginWindow(ctk.CTk):
         # Submit Registration
         btn_reg = ctk.CTkButton(
             self.content_container,
-            text="Create Account & Enter Portal  ➔",
+            text="Create Account & Enter Portal",
             height=36,
             corner_radius=8,
             fg_color=Theme.SUCCESS,
@@ -323,7 +339,7 @@ class LoginWindow(ctk.CTk):
 
         ctk.CTkLabel(
             badge_row,
-            text=" 🔒 ADMIN ONLY ",
+            text=" ● RESTRICTED ACCESS ",
             fg_color=Theme.DANGER_BG,
             text_color=Theme.DANGER,
             corner_radius=6,
@@ -374,7 +390,7 @@ class LoginWindow(ctk.CTk):
         # Admin Sign In Button
         btn_adm_login = ctk.CTkButton(
             self.content_container,
-            text="Access Command Center  ➔",
+            text="Access Command Center",
             height=38,
             corner_radius=8,
             fg_color=Theme.PRIMARY,
@@ -396,7 +412,7 @@ class LoginWindow(ctk.CTk):
 
         ctk.CTkLabel(
             hint_frame,
-            text="🔑 Default Credentials:  admin  /  admin123\nDisaster Control Room Operations & Fleet Dispatch",
+            text="Default Credentials:  admin  /  admin123\nDisaster Control Room Operations & Fleet Dispatch",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10),
             text_color=Theme.TEXT_MUTED,
             justify="center"
@@ -442,7 +458,7 @@ class LoginWindow(ctk.CTk):
             self.destroy()
             self.on_login_success(user_data)
         else:
-            self.lbl_cit_error.configure(text="❌ Invalid citizen credentials. Please try again.")
+            self.lbl_cit_error.configure(text="Invalid citizen credentials. Please try again.")
 
     def _attempt_admin_login(self):
         username = self.ent_adm_user.get().strip()
@@ -464,13 +480,13 @@ class LoginWindow(ctk.CTk):
         if user:
             user_data = dict(user)
             if user_data.get("role", "").upper() != "ADMIN":
-                self.lbl_adm_error.configure(text="⚠️ This account does not have Admin privileges. Use Citizen Login.")
+                self.lbl_adm_error.configure(text="This account does not have Admin privileges. Use Citizen Login.")
                 return
 
             self.destroy()
             self.on_login_success(user_data)
         else:
-            self.lbl_adm_error.configure(text="❌ Invalid admin credentials.")
+            self.lbl_adm_error.configure(text="Invalid admin credentials.")
 
     def _attempt_register(self):
         fname = self.reg_fullname.get().strip()

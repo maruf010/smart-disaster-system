@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from gui.theme import Theme
+from gui.icons import get_icon
 from gui.views.dashboard_view import DashboardView
 from gui.views.disaster_view import DisasterView
 from gui.views.emergency_view import EmergencyView
@@ -71,9 +72,12 @@ class App(ctk.CTk):
         brand_top = ctk.CTkFrame(brand_frame, fg_color="transparent")
         brand_top.pack(fill="x")
 
+        brand_icon = get_icon("shield", color=Theme.PRIMARY, size=24)
         logo_lbl = ctk.CTkLabel(
             brand_top,
-            text="🛡️ SDERMS",
+            text="  SDERMS",
+            image=brand_icon,
+            compound="left",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=20, weight="bold"),
             text_color=Theme.TEXT_MAIN
         )
@@ -110,12 +114,12 @@ class App(ctk.CTk):
         row_idx += 1
 
         nav_ops = [
-            ("dashboard", "📊  Executive Dashboard"),
-            ("disasters", "🌪️  Disaster Monitoring"),
-            ("emergencies", "🚨  Emergency Triage Queue"),
+            ("dashboard", "Executive Dashboard", "dashboard"),
+            ("disasters", "Disaster Monitoring", "disaster"),
+            ("emergencies", "Emergency Queue", "emergency"),
         ]
-        for key, label in nav_ops:
-            self._add_nav_btn(row_idx, key, label)
+        for key, label, icon_name in nav_ops:
+            self._add_nav_btn(row_idx, key, label, icon_name)
             row_idx += 1
 
         # Group 2: Logistics & Dispatch
@@ -123,21 +127,21 @@ class App(ctk.CTk):
         row_idx += 1
 
         nav_logistics = [
-            ("shelters", "🏕️  Shelter Centers"),
-            ("resources", "📦  Supply Inventories"),
-            ("rescue", "🚑  Rescue Squads"),
-            ("volunteers", "🤝  Volunteers Roster"),
-            ("routes", "🧭  Dijkstra Navigation"),
+            ("shelters", "Shelter Centers", "shelter"),
+            ("resources", "Supply Inventories", "resource"),
+            ("rescue", "Rescue Squads", "rescue"),
+            ("volunteers", "Volunteers Roster", "volunteer"),
+            ("routes", "Route Navigation", "routes"),
         ]
-        for key, label in nav_logistics:
-            self._add_nav_btn(row_idx, key, label)
+        for key, label, icon_name in nav_logistics:
+            self._add_nav_btn(row_idx, key, label, icon_name)
             row_idx += 1
 
         # Group 3: Analytics
         self._add_nav_heading(row_idx, "AUDIT & INTELLIGENCE")
         row_idx += 1
 
-        self._add_nav_btn(row_idx, "reports", "📈  Reports & Analytics")
+        self._add_nav_btn(row_idx, "reports", "Reports & Analytics", "reports")
         row_idx += 1
 
         # Bottom Profile Card
@@ -155,10 +159,11 @@ class App(ctk.CTk):
         user_row = ctk.CTkFrame(bottom_frame, fg_color="transparent")
         user_row.pack(fill="x", padx=10, pady=(10, 6))
 
+        user_avatar_icon = get_icon("user", color=Theme.TEXT_MUTED, size=22)
         user_avatar = ctk.CTkLabel(
             user_row,
-            text="👤",
-            font=ctk.CTkFont(size=18),
+            image=user_avatar_icon,
+            text="",
             width=28
         )
         user_avatar.pack(side="left", padx=(0, 6))
@@ -217,10 +222,15 @@ class App(ctk.CTk):
         )
         lbl.grid(row=row, column=0, sticky="w", padx=18, pady=(8, 2))
 
-    def _add_nav_btn(self, row, key, label):
+    def _add_nav_btn(self, row, key, label, icon_name):
+        inactive_icon = get_icon(icon_name, color=("#475569", "#94A3B8"), size=17)
+        active_icon = get_icon(icon_name, color="#FFFFFF", size=17)
+
         btn = ctk.CTkButton(
             self.sidebar,
-            text=label,
+            text=f"  {label}",
+            image=inactive_icon,
+            compound="left",
             anchor="w",
             height=36,
             corner_radius=8,
@@ -231,7 +241,7 @@ class App(ctk.CTk):
             command=lambda k=key: self._select_tab(k)
         )
         btn.grid(row=row, column=0, sticky="ew", padx=10, pady=1)
-        self.nav_buttons[key] = btn
+        self.nav_buttons[key] = (btn, active_icon, inactive_icon)
 
     def _build_content_area(self):
         # Container
@@ -255,12 +265,13 @@ class App(ctk.CTk):
 
     def _select_tab(self, key):
         # Update navigation highlights
-        for k, btn in self.nav_buttons.items():
+        for k, (btn, active_icon, inactive_icon) in self.nav_buttons.items():
             if k == key:
                 btn.configure(
                     fg_color=Theme.PRIMARY,
                     text_color="white",
                     hover_color=Theme.PRIMARY_HOVER,
+                    image=active_icon,
                     font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold")
                 )
             else:
@@ -268,6 +279,7 @@ class App(ctk.CTk):
                     fg_color="transparent",
                     text_color=Theme.TEXT_MUTED,
                     hover_color=Theme.PRIMARY_LIGHT,
+                    image=inactive_icon,
                     font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="normal")
                 )
 

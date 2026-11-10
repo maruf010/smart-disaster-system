@@ -31,7 +31,7 @@ class RescueView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="🚑 Specialized Rescue Teams & Deployment Dispatch",
+            text="Specialized Rescue Teams & Deployment Dispatch",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w")
@@ -56,7 +56,7 @@ class RescueView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             card,
-            text="➕ Enlist Rescue Squad",
+            text="Enlist Rescue Squad",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).grid(row=0, column=0, columnspan=4, sticky="w", padx=12, pady=(8, 4))
@@ -112,7 +112,7 @@ class RescueView(ctk.CTkFrame):
 
         btn_add = ctk.CTkButton(
             card,
-            text="Enlist Response Squad  ➔",
+            text="Enlist Response Squad",
             height=30,
             corner_radius=6,
             fg_color=Theme.PRIMARY,
@@ -141,7 +141,7 @@ class RescueView(ctk.CTkFrame):
 
         self.rescue_search = ctk.CTkEntry(
             filter_bar,
-            placeholder_text="🔍 Search squad by name or base location...",
+            placeholder_text="Search squad by name or base location...",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -192,7 +192,7 @@ class RescueView(ctk.CTkFrame):
         th.grid(row=1, column=0, sticky="ew", padx=8, pady=(4, 2))
         th.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-        cols = ["SQUAD NAME", "SPECIALIZATION", "PERSONNEL", "📍 BASE NODE", "🕒 REGISTERED TIME", "STATUS & ACTION"]
+        cols = ["SQUAD NAME", "SPECIALIZATION", "PERSONNEL", "BASE NODE", "REGISTERED TIME", "STATUS & ACTION"]
         for idx, col in enumerate(cols):
             ctk.CTkLabel(
                 th,
@@ -302,14 +302,14 @@ class RescueView(ctk.CTkFrame):
             ctk.CTkLabel(row_frame, text=r["specialization"], font=Theme.font_small(), text_color=Theme.TEXT_MAIN, anchor="w").grid(row=0, column=1, sticky="ew", padx=6, pady=6)
             
             # Personnel
-            ctk.CTkLabel(row_frame, text=f"👥 {r['members']} staff", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=2, sticky="ew", padx=6, pady=6)
+            ctk.CTkLabel(row_frame, text=f"{r['members']} staff", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=2, sticky="ew", padx=6, pady=6)
             
             # Base Node
-            ctk.CTkLabel(row_frame, text=f"📍 Node {r['current_location']}", font=Theme.font_body_bold(), text_color=Theme.PRIMARY, anchor="w").grid(row=0, column=3, sticky="ew", padx=6, pady=6)
+            ctk.CTkLabel(row_frame, text=f"Node {r['current_location']}", font=Theme.font_body_bold(), text_color=Theme.PRIMARY, anchor="w").grid(row=0, column=3, sticky="ew", padx=6, pady=6)
 
             # Registered Time
             time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
-            ctk.CTkLabel(row_frame, text=f"🕒 {time_str}", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=4, sticky="ew", padx=6, pady=6)
+            ctk.CTkLabel(row_frame, text=str(time_str), font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=4, sticky="ew", padx=6, pady=6)
 
             # Status & Action
             action_box = ctk.CTkFrame(row_frame, fg_color="transparent")

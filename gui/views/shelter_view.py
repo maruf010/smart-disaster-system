@@ -31,7 +31,7 @@ class ShelterView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="🏕️ Evacuation Shelters & Best-Fit Capacity Recommender",
+            text="Evacuation Shelters & Best-Fit Capacity Recommender",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w")
@@ -61,7 +61,7 @@ class ShelterView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             add_box,
-            text="➕ Register Shelter Center",
+            text="Register Shelter Center",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).grid(row=0, column=0, columnspan=2, sticky="w", padx=10, pady=(8, 4))
@@ -139,7 +139,7 @@ class ShelterView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             rec_box,
-            text="🎯 Best-Fit Shelter Recommender",
+            text="Best-Fit Shelter Recommender",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w", padx=10, pady=(8, 2))
@@ -217,7 +217,7 @@ class ShelterView(ctk.CTkFrame):
 
         self.sh_search_admin = ctk.CTkEntry(
             filter_bar,
-            placeholder_text="🔍 Search shelter by name or location...",
+            placeholder_text="Search shelter by name or location...",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -253,7 +253,7 @@ class ShelterView(ctk.CTkFrame):
         th.grid(row=1, column=0, sticky="ew", padx=8, pady=(4, 2))
         th.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-        cols = ["SHELTER NAME", "📍 LOCATION", "CAPACITY / OCCUPIED", "OCCUPANCY LEVEL", "🕒 ADDED TIME", "STATUS"]
+        cols = ["SHELTER NAME", "LOCATION", "CAPACITY / OCCUPIED", "OCCUPANCY LEVEL", "ADDED TIME", "STATUS"]
         for idx, col in enumerate(cols):
             ctk.CTkLabel(
                 th,
@@ -327,7 +327,7 @@ class ShelterView(ctk.CTkFrame):
 
         if not suitable:
             self.lbl_rec_result.configure(
-                text=f"❌ No single shelter has {required} available beds.",
+                text=f"No single shelter has {required} available beds.",
                 text_color=Theme.DANGER
             )
             return
@@ -335,7 +335,7 @@ class ShelterView(ctk.CTkFrame):
         suitable.sort(key=lambda x: x[0])
         avail, best = suitable[0]
         self.lbl_rec_result.configure(
-            text=f"🎯 Optimal: {best['name']} ({best['location']}) | Free: {avail} beds (Surplus: {avail - required})",
+            text=f"Optimal: {best['name']} ({best['location']}) | Free: {avail} beds (Surplus: {avail - required})",
             text_color=Theme.SUCCESS
         )
 
@@ -411,7 +411,7 @@ class ShelterView(ctk.CTkFrame):
             # Location
             ctk.CTkLabel(
                 row_frame,
-                text=f"📍 {r['location']}",
+                text=str(r['location']),
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MAIN,
                 anchor="w"
@@ -448,7 +448,7 @@ class ShelterView(ctk.CTkFrame):
             time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
             ctk.CTkLabel(
                 row_frame,
-                text=f"🕒 {time_str}",
+                text=str(time_str),
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MUTED,
                 anchor="w"

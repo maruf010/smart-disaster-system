@@ -31,7 +31,7 @@ class VolunteerView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="🤝 Civilian Volunteers Network & Skill Directory",
+            text="Civilian Volunteers Network & Skill Directory",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w")
@@ -56,7 +56,7 @@ class VolunteerView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             card,
-            text="➕ Register Civilian Volunteer",
+            text="Register Civilian Volunteer",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).grid(row=0, column=0, columnspan=4, sticky="w", padx=12, pady=(8, 4))
@@ -112,7 +112,7 @@ class VolunteerView(ctk.CTkFrame):
 
         btn_add = ctk.CTkButton(
             card,
-            text="Enlist Volunteer  ➔",
+            text="Enlist Volunteer",
             height=30,
             corner_radius=6,
             fg_color=Theme.PRIMARY,
@@ -141,7 +141,7 @@ class VolunteerView(ctk.CTkFrame):
 
         self.vol_search = ctk.CTkEntry(
             filter_bar,
-            placeholder_text="🔍 Search volunteer by name, location or phone...",
+            placeholder_text="Search volunteer by name, location or phone...",
             height=30,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -192,7 +192,7 @@ class VolunteerView(ctk.CTkFrame):
         th.grid(row=1, column=0, sticky="ew", padx=8, pady=(4, 2))
         th.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
-        cols = ["VOLUNTEER NAME", "SKILLSET", "📍 LOCATION", "CONTACT PHONE", "🕒 JOINED TIME", "READINESS & ACTION"]
+        cols = ["VOLUNTEER NAME", "SKILLSET", "LOCATION", "CONTACT PHONE", "JOINED TIME", "READINESS & ACTION"]
         for idx, col in enumerate(cols):
             ctk.CTkLabel(
                 th,
@@ -300,14 +300,14 @@ class VolunteerView(ctk.CTkFrame):
             ctk.CTkLabel(row_frame, text=r["skill"], font=Theme.font_small(), text_color=Theme.TEXT_MAIN, anchor="w").grid(row=0, column=1, sticky="ew", padx=6, pady=6)
             
             # Location
-            ctk.CTkLabel(row_frame, text=f"📍 {r['location']}", font=Theme.font_small(), text_color=Theme.TEXT_MAIN, anchor="w").grid(row=0, column=2, sticky="ew", padx=6, pady=6)
+            ctk.CTkLabel(row_frame, text=str(r['location']), font=Theme.font_small(), text_color=Theme.TEXT_MAIN, anchor="w").grid(row=0, column=2, sticky="ew", padx=6, pady=6)
             
             # Contact
             ctk.CTkLabel(row_frame, text=r["contact"] or "N/A", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=3, sticky="ew", padx=6, pady=6)
 
             # Joined Time
             time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
-            ctk.CTkLabel(row_frame, text=f"🕒 {time_str}", font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=4, sticky="ew", padx=6, pady=6)
+            ctk.CTkLabel(row_frame, text=str(time_str), font=Theme.font_small(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=4, sticky="ew", padx=6, pady=6)
 
             # Action Box
             action_box = ctk.CTkFrame(row_frame, fg_color="transparent")

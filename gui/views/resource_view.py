@@ -32,7 +32,7 @@ class ResourceView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             left,
-            text="📦 Relief Supplies Inventory & Proportional Distribution",
+            text="Relief Supplies Inventory & Proportional Distribution",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
             text_color=Theme.TEXT_MAIN
         ).pack(anchor="w")
@@ -154,7 +154,7 @@ class ResourceView(ctk.CTkFrame):
 
         self.res_search = ctk.CTkEntry(
             inv_filter,
-            placeholder_text="🔍 Search supply name...",
+            placeholder_text="Search supply name...",
             height=28,
             corner_radius=6,
             fg_color=Theme.BG_INPUT,
@@ -208,7 +208,7 @@ class ResourceView(ctk.CTkFrame):
         ctk.CTkLabel(th, text="SUPPLY ITEM", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=0, sticky="ew", padx=6, pady=4)
         ctk.CTkLabel(th, text="CURRENT STOCK", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=1, sticky="ew", padx=6, pady=4)
         ctk.CTkLabel(th, text="ALERT MIN", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=2, sticky="ew", padx=6, pady=4)
-        ctk.CTkLabel(th, text="🕒 ADDED TIME", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=3, sticky="ew", padx=6, pady=4)
+        ctk.CTkLabel(th, text="ADDED TIME", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="w").grid(row=0, column=3, sticky="ew", padx=6, pady=4)
         ctk.CTkLabel(th, text="STATUS", font=Theme.font_badge(), text_color=Theme.TEXT_MUTED, anchor="center").grid(row=0, column=4, padx=6, pady=4)
 
         self.inv_list = ctk.CTkScrollableFrame(container, fg_color="transparent")
@@ -229,7 +229,7 @@ class ResourceView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             alloc_card,
-            text="⚖️ Smart Proportional Allocation Solver",
+            text="Smart Proportional Allocation Solver",
             font=Theme.font_sub(),
             text_color=Theme.TEXT_MAIN
         ).grid(row=0, column=0, sticky="w", padx=10, pady=(8, 2))
@@ -291,7 +291,7 @@ class ResourceView(ctk.CTkFrame):
 
         btn_more = ctk.CTkButton(
             btn_row,
-            text="➕ Add Area",
+            text="Add Area",
             height=30,
             corner_radius=6,
             fg_color=Theme.PRIMARY_LIGHT,
@@ -459,10 +459,10 @@ class ResourceView(ctk.CTkFrame):
             conn.execute("UPDATE resources SET quantity=quantity-? WHERE id=?", (amount, res_id))
             conn.commit()
 
-            lines = [f"✅ Fair Allocation Plan for {amount} {res['unit']} of {res['name']}:"]
+            lines = [f"Fair Allocation Plan for {amount} {res['unit']} of {res['name']}:"]
             for a, q in allocations.items():
                 pct = (area_populations[a] / sum(area_populations.values())) * 100
-                lines.append(f"• 📍 {a} (Pop: {area_populations[a]:,}, Share: {pct:.1f}%): {q} {res['unit']}")
+                lines.append(f"• {a} (Pop: {area_populations[a]:,}, Share: {pct:.1f}%): {q} {res['unit']}")
 
             self.lbl_alloc_summary.configure(text="\n".join(lines), text_color=Theme.SUCCESS)
             messagebox.showinfo("Allocation Executed", "Supplies proportionally distributed and inventory balance updated!")
@@ -568,7 +568,7 @@ class ResourceView(ctk.CTkFrame):
             time_str = format_datetime(r["created_at"]) if "created_at" in r.keys() else "N/A"
             lbl_time = ctk.CTkLabel(
                 row_frame,
-                text=f"🕒 {time_str}",
+                text=str(time_str),
                 font=Theme.font_small(),
                 text_color=Theme.TEXT_MUTED,
                 anchor="w"

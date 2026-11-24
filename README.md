@@ -29,6 +29,80 @@
 
 ---
 
+## 🚀 Multi-Platform App Downloads & Live Web Access (সব ডিভাইসে চালানোর উপায়)
+
+এই প্রজেক্টটি যেকোনো ডিভাইস (Mac, Windows, Android ফোন, এবং Web Browser)-এ কোনো কোড রান করা ছাড়াই সরাসরি অ্যাপ হিসেবে চালানো যায়:
+
+| Platform | Format / Access | Deployment / Run Method | Status |
+| :--- | :--- | :--- | :--- |
+| 🍎 **Apple MacBook (macOS)** | **Native `.app` / `.zip`** | Double-click `dist/SDERMS.app` (বা `open dist/SDERMS.app`) | ✅ Ready in repo (`dist/`) |
+| 🪟 **Windows Laptop / PC** | **Standalone `.exe`** | [GitHub Actions Artifacts](https://github.com/maruf010/smart-disaster-system/actions) থেকে ডাউনলোড | ☁️ Auto-built via Cloud CI |
+| 🌐 **Live Web Cloud Portal** | **Cloud Web App** | [Streamlit Community Cloud](https://share.streamlit.io) (100% Free Live URL) | 🚀 1-Click Deploy (`app.py`) |
+| 📱 **Android Mobile** | **Mobile APK / PWA** | Web-to-APK (AppsGeyser/Web2Apk) বা Chrome "Install App" | 📲 Instant Install |
+
+---
+
+### 1. 🍎 MacBook এ সরাসরি অ্যাপ চালানোর নিয়ম (Native macOS `.app`)
+- এই প্রজেক্টের `dist/` ফোল্ডারে সম্পূর্ণ স্বয়ংসম্পূর্ণ macOS App বিল্ড করা আছে।
+- কোনো Python বা Terminal ছাড়াই সাধারণ অ্যাপের মতো চালাতে:
+  1. Finder দিয়ে প্রজেক্টের `dist/` ফোল্ডারে যান।
+  2. **`SDERMS.app`** ফাইলে ডাবল-ক্লিক করুন।
+  3. অথবা টার্মিনালে কমান্ড দিন:
+     ```bash
+     open dist/SDERMS.app
+     ```
+  *(পেনড্রাইভে বা গুগলে ড্রাইভে কাউকে দিতে চাইলে `dist/SDERMS-MacOS.zip` ফাইলটি শেয়ার করুন)*
+
+---
+
+### 2. 🪟 Windows ল্যাপটপ বা ডেস্কটপে চালানোর নিয়ম (`.exe` Executable)
+- **GitHub Actions Cloud থেকে ডাউনলোড (রিকমেন্ডেড):**
+  1. GitHub রিপোজিটরির [Actions ট্যাবে](https://github.com/maruf010/smart-disaster-system/actions) যান।
+  2. সর্বশেষ **"Build Executables for Windows and Mac"** বিল্ডটিতে ক্লিক করুন।
+  3. নিচে **Artifacts** থেকে **`SDERMS-Windows-App`** জিপ ফাইলটি ডাউনলোড করে আনজিপ করুন।
+  4. প্রাপ্ত **`SDERMS_Windows.exe`** ফাইলে ডাবল-ক্লিক করলেই উইন্ডোজে সরাসরি সফটওয়্যারটি রান হবে।
+- **অথবা কোনো উইন্ডোজ পিসিতে লোকালি বিল্ড করতে চাইলে:**
+  ```cmd
+  pip install pyinstaller customtkinter pillow
+  pyinstaller --name "SDERMS" --windowed --noconfirm --collect-all customtkinter --add-data "database;database" gui_main.py
+  ```
+
+---
+
+### 3. 🌐 লাইভ ওয়েব ক্লাউড পোর্টাল (Streamlit Cloud - 100% Free)
+- শিক্ষক বা যেকোনো ইউজারকে মোবাইল বা ল্যাপটপের যেকোনো ব্রাউজারে লাইভ প্রজেক্ট দেখাতে:
+  1. [share.streamlit.io](https://share.streamlit.io) এ যান (GitHub দিয়ে সাইন-ইন করুন)।
+  2. **"New app"** এ ক্লিক করে ফিল্ডগুলো দিন:
+     - **Repository:** `maruf010/smart-disaster-system`
+     - **Branch:** `main`
+     - **Main file path:** `app.py`
+  3. **"Deploy!"** এ ক্লিক করুন — ১ মিনিটের মধ্যে আপনার একটি ফ্রি লাইভ লিংক (যেমন `https://...streamlit.app`) জেনারেট হয়ে যাবে।
+
+---
+
+### 4. 📱 Android ফোনে মোবাইল অ্যাপ (`.apk` / PWA)
+- **পদ্ধতি ১ (আসল `.apk` ফাইল জেনারেট):**
+  1. [AppsGeyser](https://appsgeyser.com) বা [Web2Apk](https://web2apk.com) এ যান।
+  2. আপনার Streamlit লাইভ ওয়েবসাইট লিংকটি দিন এবং নাম দিন **SDERMS**।
+  3. **"Generate APK"** তে ক্লিক করলে সরাসরি ডাউনলোডযোগ্য `.apk` ফাইল পেয়ে যাবেন যা যেকোনো ফোনে ইন্সটল করা যায়।
+- **পদ্ধতি ২ (১ ক্লিকে PWA Install):**
+  1. অ্যান্ড্রয়েডের Google Chrome ব্রাউজারে আপনার লাইভ ওয়েবসাইটটি খুলুন।
+  2. ৩-ডট মেনু (⋮) থেকে **"Install app"** বা **"Add to Home screen"** চাপুন।
+  3. ফোনের হোমস্ক্রিনে আসল মোবাইল অ্যাপের মতো আইকন চলে আসবে এবং ফুলস্ক্রিনে চালু হবে।
+
+---
+
+### 5. 💻 সোর্স কোড থেকে লোকালি রান করার কমান্ড (Developer Mode)
+```bash
+# ডেস্কটপ ডার্ক-মোড GUI (CustomTkinter):
+python3 gui_main.py
+
+# ক্লাউড ওয়েব পোর্টাল (Streamlit):
+streamlit run app.py
+```
+
+---
+
 # 🎤 FULL PRESENTATION GUIDE & SCRIPT (START TO END)
 ### প্রেজেন্টেশনে শুরু থেকে শেষ পর্যন্ত কী বলবেন, কীভাবে উপস্থাপন করবেন এবং কী ডেমো দেখাবেন (বাংলা ও ইংরেজি উভয় ভাষায় সাজানো)
 

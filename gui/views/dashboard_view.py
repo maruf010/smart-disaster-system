@@ -1,3 +1,4 @@
+import tkinter as tk
 import customtkinter as ctk
 from database import get_connection
 from gui.theme import Theme
@@ -11,6 +12,7 @@ class DashboardView(ctk.CTkScrollableFrame):
 
         self._build_header()
         self._build_kpi_grid()
+        self._build_visual_analytics_strip()
         self._build_action_and_occupancy_strip()
         self._build_alerts_section()
         self.refresh()
@@ -100,6 +102,201 @@ class DashboardView(ctk.CTkScrollableFrame):
 
         self.card_resolved = StatCard(cards_frame, title="Resolved Incidents", value="0", icon="check", accent_color=Theme.SUCCESS)
         self.card_resolved.grid(row=1, column=3, sticky="ew", padx=4, pady=3)
+
+    def _build_visual_analytics_strip(self):
+        analytics_strip = ctk.CTkFrame(self, fg_color="transparent")
+        analytics_strip.pack(fill="x", padx=8, pady=3)
+        analytics_strip.grid_columnconfigure((0, 1), weight=1)
+
+        # Card 1: Emergency Risk Breakdown Bar Chart
+        card1 = ctk.CTkFrame(
+            analytics_strip,
+            corner_radius=10,
+            fg_color=Theme.BG_CARD,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR_LIGHT
+        )
+        card1.grid(row=0, column=0, sticky="nsew", padx=4, pady=3)
+        card1.grid_columnconfigure(0, weight=1)
+
+        c1_head = ctk.CTkFrame(card1, fg_color="transparent")
+        c1_head.pack(fill="x", padx=12, pady=(8, 4))
+
+        ctk.CTkLabel(
+            c1_head,
+            text="Emergency Severity Triage Breakdown",
+            font=Theme.font_sub(),
+            text_color=Theme.TEXT_MAIN
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            c1_head,
+            text="Visual Analytics",
+            font=Theme.font_badge(),
+            text_color=Theme.TEXT_MUTED
+        ).pack(side="right")
+
+        self.chart_canvas_risk = tk.Canvas(
+            card1,
+            height=120,
+            bg="#0b1329",
+            highlightthickness=0
+        )
+        self.chart_canvas_risk.pack(fill="x", padx=8, pady=(0, 8))
+        self.chart_canvas_risk.bind("<Configure>", lambda e: self._draw_risk_chart())
+
+        # Card 2: Shelter Capacity & Readiness Gauge
+        card2 = ctk.CTkFrame(
+            analytics_strip,
+            corner_radius=10,
+            fg_color=Theme.BG_CARD,
+            border_width=1,
+            border_color=Theme.BORDER_COLOR_LIGHT
+        )
+        card2.grid(row=0, column=1, sticky="nsew", padx=4, pady=3)
+        card2.grid_columnconfigure(0, weight=1)
+
+        c2_head = ctk.CTkFrame(card2, fg_color="transparent")
+        c2_head.pack(fill="x", padx=12, pady=(8, 4))
+
+        ctk.CTkLabel(
+            c2_head,
+            text="Shelter Capacity & Readiness Gauge",
+            font=Theme.font_sub(),
+            text_color=Theme.TEXT_MAIN
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            c2_head,
+            text="Real-time Telemetry",
+            font=Theme.font_badge(),
+            text_color=Theme.TEXT_MUTED
+        ).pack(side="right")
+
+        self.chart_canvas_shelter = tk.Canvas(
+            card2,
+            height=120,
+            bg="#0b1329",
+            highlightthickness=0
+        )
+        self.chart_canvas_shelter.pack(fill="x", padx=8, pady=(0, 8))
+        self.chart_canvas_shelter.bind("<Configure>", lambda e: self._draw_shelter_gauge())
+
+    def _draw_risk_chart(self):
+        if not hasattr(self, "chart_canvas_risk"):
+            return
+        self.chart_canvas_risk.delete("all")
+
+        conn = get_connection()
+        try:
+            rows = conn.execute("""
+                SELECT priority_level, COUNT(*) cnt
+                FROM emergency_requests
+                WHERE status != 'RESOLVED'
+                GROUP BY priority_level
+            """).fetchall()
+        finally:
+            conn.close()
+
+        counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        total = 0
+        for r in rows:
+            pl = (r["priority_level"] or "").upper()
+            if pl in counts:
+                counts[pl] = r["cnt"]
+                total += r["cnt"]
+
+        w = self.chart_canvas_risk.winfo_width()
+        if w < 100:
+            w = 360
+        h = self.chart_canvas_risk.winfo_height()
+        if h < 80:
+            h = 120
+
+        levels = [
+            ("CRITICAL", "#ef4444", counts["CRITICAL"]),
+            ("HIGH", "#f59e0b", counts["HIGH"]),
+            ("MEDIUM", "#3b82f6", counts["MEDIUM"]),
+            ("LOW", "#10b981", counts["LOW"]),
+        ]
+
+        bar_h = 13
+        start_y = 10
+        gap = 26
+        track_x1 = 75
+        track_x2 = max(track_x1 + 60, w - 85)
+
+        for i, (lvl, col, cnt) in enumerate(levels):
+            y = start_y + i * gap
+            pct = (cnt / total * 100) if total > 0 else 0
+            
+            # Label
+            self.chart_canvas_risk.create_text(10, y + bar_h/2, text=lvl, fill="#94a3b8", font=("Arial", 9, "bold"), anchor="w")
+            
+            # Track
+            self.chart_canvas_risk.create_rectangle(track_x1, y, track_x2, y + bar_h, fill="#1e293b", width=0)
+            
+            # Filled bar
+            if cnt > 0:
+                bar_w = (track_x2 - track_x1) * (pct / 100)
+                self.chart_canvas_risk.create_rectangle(track_x1, y, track_x1 + max(4, bar_w), y + bar_h, fill=col, width=0)
+            
+            # Right text
+            self.chart_canvas_risk.create_text(track_x2 + 8, y + bar_h/2, text=f"{cnt} ({pct:.0f}%)", fill="#f8fafc", font=("Arial", 8), anchor="w")
+
+    def _draw_shelter_gauge(self):
+        if not hasattr(self, "chart_canvas_shelter"):
+            return
+        self.chart_canvas_shelter.delete("all")
+
+        conn = get_connection()
+        try:
+            total_cap = conn.execute("SELECT COALESCE(SUM(capacity), 0) s FROM shelters").fetchone()["s"]
+            total_occ = conn.execute("SELECT COALESCE(SUM(occupied), 0) s FROM shelters").fetchone()["s"]
+            total_shelters = conn.execute("SELECT COUNT(*) c FROM shelters").fetchone()["c"]
+            avail_teams = conn.execute("SELECT COUNT(*) c FROM rescue_teams WHERE status='AVAILABLE'").fetchone()["c"]
+        finally:
+            conn.close()
+
+        w = self.chart_canvas_shelter.winfo_width()
+        if w < 100:
+            w = 360
+        h = self.chart_canvas_shelter.winfo_height()
+        if h < 80:
+            h = 120
+
+        pct = int((total_occ / total_cap * 100)) if total_cap > 0 else 0
+        pct = min(100, max(0, pct))
+
+        # Draw donut arc on the left
+        gx, gy = 55, h / 2
+        gr = 42
+        # Background arc
+        self.chart_canvas_shelter.create_arc(gx-gr, gy-gr, gx+gr, gy+gr, start=0, extent=359, style="arc", outline="#1e293b", width=9)
+        # Active arc
+        color = "#ef4444" if pct >= 90 else ("#f59e0b" if pct >= 70 else "#10b981")
+        if pct > 0:
+            extent = -int((pct / 100) * 360)
+            self.chart_canvas_shelter.create_arc(gx-gr, gy-gr, gx+gr, gy+gr, start=90, extent=extent, style="arc", outline=color, width=9)
+
+        # Center text
+        self.chart_canvas_shelter.create_text(gx, gy - 6, text=f"{pct}%", fill="#ffffff", font=("Arial", 13, "bold"))
+        self.chart_canvas_shelter.create_text(gx, gy + 10, text="OCCUPIED", fill="#94a3b8", font=("Arial", 7, "bold"))
+
+        # Right statistics breakdown
+        sx = 125
+        self.chart_canvas_shelter.create_oval(sx, 18, sx+6, 24, fill="#10b981", width=0)
+        self.chart_canvas_shelter.create_text(sx+12, 21, text=f"Sheltered: {total_occ:,} people", fill="#f1f5f9", font=("Arial", 9, "bold"), anchor="w")
+
+        avail_beds = max(0, total_cap - total_occ)
+        self.chart_canvas_shelter.create_oval(sx, 44, sx+6, 50, fill="#3b82f6", width=0)
+        self.chart_canvas_shelter.create_text(sx+12, 47, text=f"Available Space: {avail_beds:,} beds", fill="#cbd5e1", font=("Arial", 8), anchor="w")
+
+        self.chart_canvas_shelter.create_oval(sx, 70, sx+6, 76, fill="#8b5cf6", width=0)
+        self.chart_canvas_shelter.create_text(sx+12, 73, text=f"Active Shelters: {total_shelters} facilities", fill="#cbd5e1", font=("Arial", 8), anchor="w")
+
+        self.chart_canvas_shelter.create_oval(sx, 96, sx+6, 102, fill="#06b6d4", width=0)
+        self.chart_canvas_shelter.create_text(sx+12, 99, text=f"Rescue Squads: {avail_teams} units", fill="#cbd5e1", font=("Arial", 8), anchor="w")
 
     def _build_action_and_occupancy_strip(self):
         strip = ctk.CTkFrame(self, fg_color="transparent")
@@ -233,6 +430,8 @@ class DashboardView(ctk.CTkScrollableFrame):
         self.alerts_list.pack(fill="x", padx=8, pady=(0, 8))
 
     def refresh(self):
+        self._draw_risk_chart()
+        self._draw_shelter_gauge()
         conn = get_connection()
         try:
             active_d = conn.execute("SELECT COUNT(*) c FROM disasters WHERE status='ACTIVE'").fetchone()["c"]

@@ -373,6 +373,27 @@ else:
 
         st.divider()
 
+        # Visual Telemetry Charts
+        st.subheader("📊 Visual Analytics & Telemetry")
+        c_ch1, c_ch2 = st.columns(2)
+        with c_ch1:
+            st.markdown("##### 🚨 Emergency Severity Distribution")
+            df_risk_dist = query_df("SELECT priority_level, COUNT(*) as Incidents FROM emergency_requests WHERE status != 'RESOLVED' GROUP BY priority_level")
+            if not df_risk_dist.empty:
+                st.bar_chart(df_risk_dist.set_index("priority_level"), color="#ef4444")
+            else:
+                st.info("No active emergency incidents in queue.")
+
+        with c_ch2:
+            st.markdown("##### 🏢 Shelter Occupancy Breakdown")
+            df_sh_dist = query_df("SELECT name, occupied, capacity FROM shelters LIMIT 6")
+            if not df_sh_dist.empty:
+                st.bar_chart(df_sh_dist.set_index("name")[["occupied", "capacity"]])
+            else:
+                st.info("No active shelters found.")
+
+        st.divider()
+
         # High priority live crisis alerts
         st.subheader("🚨 Critical & High-Priority Emergency Triage Queue")
         df_top_crises = query_df("""
@@ -611,13 +632,17 @@ else:
             with c_end:
                 end_node = st.selectbox("End Node (Destination)", nodes, index=min(3, len(nodes)-1))
 
-            if st.button("🚀 Calculate Shortest Safe Route", type="primary"):
+            calc_pressed = st.button("🚀 Calculate Shortest Safe Route", type="primary")
+            active_path = None
+
+            if calc_pressed:
                 conn = get_connection()
                 active_roads = conn.execute("SELECT * FROM roads").fetchall()
                 conn.close()
 
                 graph = build_graph(active_roads)
                 cost, path = shortest_path(graph, start_node, end_node)
+                active_path = path
 
                 if cost is None:
                     st.error(f"❌ No passable route exists between Node {start_node} and Node {end_node}! (Roads may be BLOCKED).")
@@ -630,6 +655,42 @@ else:
                         🎯 <b>Total Distance:</b> {cost:g} KM
                     </div>
                     """, unsafe_allow_html=True)
+
+            # Interactive Topology Graph Visualization
+            st.markdown("#### 🗺️ Live Road Topology Graph")
+            dot_lines = [
+                "graph G {",
+                "layout=neato;",
+                "bgcolor=\"transparent\";",
+                "node [style=filled, fontname=\"Helvetica\", shape=circle, fillcolor=\"#1e293b\", fontcolor=\"#ffffff\", width=0.6, fixedsize=true];",
+                "edge [fontname=\"Helvetica\", fontsize=10, fontcolor=\"#94a3b8\", color=\"#475569\", penwidth=1.8];"
+            ]
+            path_pairs = set()
+            if active_path and len(active_path) > 1:
+                for idx in range(len(active_path) - 1):
+                    path_pairs.add((active_path[idx].upper(), active_path[idx+1].upper()))
+                    path_pairs.add((active_path[idx+1].upper(), active_path[idx].upper()))
+
+            for _, r in df_roads.iterrows():
+                u = str(r["from_location"]).upper()
+                v = str(r["to_location"]).upper()
+                dist = r["distance"]
+                is_bl = (r["status"] == "BLOCKED")
+                is_pt = (u, v) in path_pairs
+
+                if is_pt:
+                    dot_lines.append(f'"{u}" -- "{v}" [label="{dist:g}km", color="#10b981", penwidth=4.0, fontcolor="#34d399"];')
+                elif is_bl:
+                    dot_lines.append(f'"{u}" -- "{v}" [label="BLOCKED", color="#ef4444", style=dashed, penwidth=2.0, fontcolor="#f87171"];')
+                else:
+                    dot_lines.append(f'"{u}" -- "{v}" [label="{dist:g}km"];')
+
+            if active_path:
+                for n in active_path:
+                    dot_lines.append(f'"{n}" [fillcolor="#065f46", color="#10b981", penwidth=3.0, fontcolor="#ffffff"];')
+
+            dot_lines.append("}")
+            st.graphviz_chart("\n".join(dot_lines))
 
     # ---------- 9. AUDIT REPORTS & CSV EXPORT ----------
     elif admin_menu == "📈 Audit Reports & CSV Export":

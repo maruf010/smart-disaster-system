@@ -12,6 +12,10 @@ env/
 venv/
 ENV/
 .venv/
+build/
+dist/
+*.spec
+
 
 # macOS
 .DS_Store
